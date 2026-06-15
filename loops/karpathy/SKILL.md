@@ -21,40 +21,74 @@ once the loop is running.
 ## 1. Resolve bindings (setup — do this once)
 
 **MANDATORY INTERACTIVE SETUP. You MUST ask every question below and wait for the
-user's explicit answer before proceeding. Do NOT infer, guess, or skip any question
-based on context — even if you can read the files and think you already know the
-answer. The purpose of asking is to put the user in control of their experiment, not
-to save a round-trip. If you skip any question, you are doing it wrong.**
+user's explicit answer before proceeding. Do NOT skip or auto-apply any answer —
+even if you can read the files and think you already know the value. The purpose of
+asking is to put the user in control of their experiment. If you skip any question,
+you are doing it wrong.**
 
-Ask the questions one at a time (or as a short grouped list), wait for the user's
-response, then proceed to the next. Do not start the loop until every binding has
-been confirmed by the user in their own words.
+### 1.0 Detect host
+
+Check whether the `AskUserQuestion` tool is available to you.
+
+- **If yes** → you are running in **Claude Code**. Use the **Claude Code path** for
+  every question below: scan the project first to infer a likely answer, then present
+  it as the recommended option via `AskUserQuestion`. The user confirms or overrides
+  with one click.
+- **If no** → use the **plain-text path**: ask each question as a quoted prompt and
+  wait for the user's typed reply.
+
+Record as **`<host>`** = `claude-code` or `other`. Proceed to 1a.
+
+---
 
 ### 1a. What metric should the loop minimize?
 
-Ask the user:
+**Claude Code**: Scan `<editable_files>` and any README for metric names
+(`val_loss`, `val_acc`, `bpb`, `error`, etc.). Call `AskUserQuestion`:
+- Option 1 *(Recommended)*: the value you inferred, e.g. `val_acc`
+- Option 2–3: other plausible metrics you spotted
+- Option 4: `Other — I'll specify`
+
+**Other**: Ask:
 > "What scalar metric should I minimize? (e.g. `val_loss`, `val_bpb`, `error_rate`)"
 
-Record as **`<metric>`**. The loop will infer the grep pattern automatically by trying
-`^<metric>:` first; if that returns nothing after the first run, scan the last 20 lines
-of the log to find where the value is printed and lock in the correct pattern.
+Record as **`<metric>`**. The loop infers the grep pattern automatically — tries
+`^<metric>:` first; if that returns nothing, scans `tail -n 20 run.log` and locks
+in the correct pattern.
+
+---
 
 ### 1b. What Python environment should be used?
 
-Ask the user:
+**Claude Code**: Scan for `pyproject.toml`, `.venv/`, `uv.lock`, virtualenv paths,
+and any README run instructions to infer the run command. Call `AskUserQuestion`:
+- Option 1 *(Recommended)*: the command you inferred, e.g.
+  `/path/to/venv/bin/python train.py`
+- Option 2: `uv run train.py`
+- Option 3: `Other — I'll specify`
+
+**Other**: Ask:
 > "What Python environment / uv project should I use to run training?
 >  (e.g. `uv run train.py`, or a path to a virtualenv + script)"
 
-Record as **`<run_cmd>`** — the exact shell command that launches one training run.
+Record as **`<run_cmd>`**.
 
 > **Remote sandboxes**: if the sandbox is on a remote host (SSH, cloud VM, container),
-> note the connection details. All shell commands below are issued through whatever
-> connection the user specifies. The loop itself runs on the user's local machine;
-> only the `<run_cmd>` is dispatched remotely if needed.
+> note the connection details. All shell commands below are issued through that
+> connection. The loop runs locally; only `<run_cmd>` is dispatched remotely if needed.
+
+---
 
 ### 1c. Which files are fair game to edit?
 
-Ask the user:
+**Claude Code**: List every source file that looks like a primary artifact (model
+definition, config, training script) — exclude data, logs, env files, and the
+evaluation harness. Call `AskUserQuestion` (multi-select if supported):
+- One option per candidate file you found, e.g. `model.py`, `config.yaml`,
+  `train.py`
+- A final option: `Other — I'll specify`
+
+**Other**: Ask:
 > "Which files may I edit? List them. (Typical answer: just `train.py`, or a set of
 >  model/config files.)"
 
@@ -64,27 +98,48 @@ Record as **`<editable_files>`**.
 session — setup or loop — verify it appears in `<editable_files>`. If it does not,
 do not edit it under any circumstances. Every other file is read-only.
 
+---
+
 ### 1d. What is the training entrypoint?
 
-Ask the user:
+**Claude Code**: Check if the entrypoint is the same as `<run_cmd>` — it usually is.
+Call `AskUserQuestion`:
+- Option 1 *(Recommended)*: `Same as run command — <run_cmd>`
+- Option 2: `Other — I'll specify`
+
+**Other**: Ask:
 > "What command starts a single training run? Is it the same as your run command,
 >  or a separate script?"
 
-Confirm the full shell string. Record as **`<entrypoint>`** (often the same as
-`<run_cmd>`).
+Record as **`<entrypoint>`** (often the same as `<run_cmd>`).
+
+---
 
 ### 1e. Where should the sandbox live?
 
-Ask the user:
+**Claude Code**: Propose a sensible default (e.g. `./sandbox/` next to the
+editable files, or a path from any README). Call `AskUserQuestion`:
+- Option 1 *(Recommended)*: the path you inferred, e.g. `./sandbox`
+- Option 2: `Other — I'll specify`
+
+**Other**: Ask:
 > "Where should I keep the sandbox (results log + per-iteration snapshots)?
 >  Give me an absolute path. If training runs on a remote host, tell me whether
 >  the sandbox should be local or remote."
 
-Record as **`<sandbox_root>`**. Create the directory now if it does not exist.
+Record as **`<sandbox_root>`**.
+
+---
 
 ### 1f. Iteration strategy — branches or same-branch snapshots?
 
-Ask the user:
+**Claude Code**: Check whether the working directory is a git repo and whether it is
+gitignored/excluded from the main tree (suggesting snapshots is safer). Call
+`AskUserQuestion`:
+- Option 1 *(Recommended)*: whichever you inferred is safer, with a one-line reason
+- Option 2: the other strategy
+
+**Other**: Ask:
 > "How should I track iterations?
 >  (a) **Branch per iteration** (Karpathy original): each experiment gets a git commit
 >      on a dedicated `autoresearch/<tag>` branch; good runs advance the branch,
@@ -97,46 +152,50 @@ Record as **`<iter_strategy>`** = `branches` or `snapshots`.
 **If `branches`**: propose a run tag based on today's date (e.g. `jun14`). The branch
 `autoresearch/<tag>` must not already exist. Create it: `git checkout -b autoresearch/<tag>`.
 
-**If `snapshots`**: initialise the sandbox layout now —
-
+**If `snapshots`**: the sandbox layout will be:
 ```
 <sandbox_root>/
-├── results.tsv          # append-only run log
+├── results.tsv
 └── iter1/
-    └── code_snapshot/   # copies of every <editable_file> before this iteration
+    └── code_snapshot/
 ```
 
-Subsequent iterations add `iter2/`, `iter3/`, … alongside `results.tsv`.
+---
 
 ### 1g. Gate on time or epochs?
 
-Ask the user:
+**Claude Code**: Check the training script and config for any existing time or epoch
+setting to infer a sensible default. Call `AskUserQuestion`:
+- Option 1 *(Recommended)*: `epochs — <N> per run` (if you found an epoch count)
+- Option 2: `time — <M> minutes per run` (if you found a time budget)
+- Option 3: `Other — I'll specify`
+
+**Other**: Ask:
 > "Should each training run be gated by **wall-clock time** (e.g. 5 minutes) or
 >  by a fixed **number of epochs**?"
 
 Record as **`<gate>`** = `time` or `epochs`.
 
 **If `time`**:
-- Ask: "How many minutes per run?" → record as **`<budget_minutes>`**.
-- Before the first run, verify that `<entrypoint>` honours a time budget. If it does
-  not already stop after `<budget_minutes>` minutes, write the following wrapper to
-  `<sandbox_root>/run_with_timeout.sh` (this file lives in the sandbox, not in any
-  source directory):
-
+- *(Claude Code)*: `AskUserQuestion` — "How many minutes per run?" with inferred
+  value as recommended option.
+- *(Other)*: Ask: "How many minutes per run?"
+- Record as **`<budget_minutes>`**. If `<entrypoint>` does not already enforce a time
+  budget, write a wrapper to `<sandbox_root>/run_with_timeout.sh`:
   ```bash
   #!/usr/bin/env bash
   timeout $(( <budget_minutes> * 60 )) <entrypoint> "$@"
   ```
-
-  Use `<sandbox_root>/run_with_timeout.sh` as the effective run command for the loop.
-  Hard kill threshold: `2 × <budget_minutes>` minutes — if a run exceeds it, kill and
-  treat as a crash.
+  Use that wrapper as the effective run command. Hard kill at `2 × <budget_minutes>`
+  minutes — treat as crash if exceeded.
 
 **If `epochs`**:
-- Ask: "How many epochs per run?" → record as **`<budget_epochs>`**.
-- Verify that `<entrypoint>` (or a config it reads) accepts an epoch count. If needed,
-  patch whichever file in `<editable_files>` controls epochs to cap at `<budget_epochs>`
-  before the first run. Do not touch any file outside `<editable_files>` to do this.
+- *(Claude Code)*: `AskUserQuestion` — "How many epochs per run?" with inferred value
+  as recommended option.
+- *(Other)*: Ask: "How many epochs per run?"
+- Record as **`<budget_epochs>`**. If needed, patch the file in `<editable_files>` that
+  controls epochs to cap at `<budget_epochs>`. Do not touch files outside
+  `<editable_files>`.
 
 ### 1h. Read in-scope files
 
