@@ -20,8 +20,15 @@ once the loop is running.
 
 ## 1. Resolve bindings (setup — do this once)
 
-Work with the user to answer the following questions. Collect all answers before
-proceeding; do not start the loop until every binding is confirmed.
+**MANDATORY INTERACTIVE SETUP. You MUST ask every question below and wait for the
+user's explicit answer before proceeding. Do NOT infer, guess, or skip any question
+based on context — even if you can read the files and think you already know the
+answer. The purpose of asking is to put the user in control of their experiment, not
+to save a round-trip. If you skip any question, you are doing it wrong.**
+
+Ask the questions one at a time (or as a short grouped list), wait for the user's
+response, then proceed to the next. Do not start the loop until every binding has
+been confirmed by the user in their own words.
 
 ### 1a. What metric should the loop minimize?
 
@@ -176,8 +183,10 @@ folder so every iteration is self-contained and auditable.
 
 ### 1k. Confirm and go
 
-Print a summary of all resolved bindings and ask the user to confirm. Once confirmed,
-begin the experiment loop immediately.
+Print a summary of every resolved binding and ask the user to confirm before doing
+anything else. **Do not create any files, directories, or sandbox structures until the
+user has confirmed.** Once they confirm, set up the sandbox (§1e–§1i) and begin the
+loop immediately.
 
 ---
 
