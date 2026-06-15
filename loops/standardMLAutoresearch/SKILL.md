@@ -198,15 +198,53 @@ much simpler code? Keep.
 - *branches*: `git log --oneline -5` — note current branch and commit hash (7 chars).
 - *snapshots*: note iteration N, confirm `<sandbox_root>/iter<N>/` does not exist yet.
 
-**2. Form a hypothesis.**
-
-On iterations 2+, your hypothesis must be grounded in the analysis from the previous
-iteration (see step 6). State it explicitly before touching any file:
-- What the analysis revealed.
-- What you predict will happen if you make the proposed change, and why.
-- Which file(s) in `<editable_files>` you will edit.
+**2. Form a hypothesis and write an analysis plan.**
 
 For the baseline (iteration 1), skip this — run unmodified.
+
+On iterations 2+:
+
+**2a. Form the hypothesis.** It must be grounded in specific empirical findings from
+the previous iteration's analysis — not in theory alone. Cite the actual output:
+name the file in `iter<N-1>/results/` and the specific number or pattern that
+motivates this change. Theoretical reasoning ("X should work because Y") is not
+sufficient without an empirical anchor.
+
+Bad: *"GAP failed, so the model needs classifier capacity — try AdamW."*
+Good: *"`results/gradient_norms.txt` showed the FC layer has 10× the gradient norm
+of the conv layers, suggesting it dominates and receives poor signal. Hypothesis:
+decouple weight decay with AdamW (weight_decay=0.01) to regularise the large FC
+independently of the conv layers."*
+
+State explicitly:
+- The specific finding (file + number/pattern) that motivates the change.
+- What you predict will happen and why that finding supports the prediction.
+- Which file(s) in `<editable_files>` you will edit.
+
+**2b. Write an analysis plan.** Before touching any code, write
+`<sandbox_root>/iter<N>/analysis/plan.md` specifying exactly what you will examine
+*after this run* to evaluate whether the hypothesis held. The plan must be specific
+to the hypothesis — not a generic checklist. Ask: "If my hypothesis is correct, what
+should I see in the data? If it is wrong, what should I see instead?"
+
+Example for an AdamW hypothesis:
+```markdown
+# Analysis plan — iter8
+
+Hypothesis: AdamW weight_decay=0.01 regularises the FC better than SGD.
+
+To evaluate:
+1. gradient_norms.py — compare per-layer gradient norms vs iter7. If hypothesis
+   holds, FC gradient norm should be lower relative to conv layers.
+2. weight_magnitudes.py — compare FC weight L2 norm vs iter7. Expect smaller.
+3. loss_curve.py — compare train/val gap vs iter7. Expect val gap to narrow.
+
+If FC grad norm is unchanged → AdamW had no effect on the gradient; try explicit
+dropout or L2 on the FC directly.
+```
+
+This plan is written now, before the run, so the post-run analysis is driven by a
+question — not chosen opportunistically after seeing the result.
 
 **3. Snapshot / commit.**
 
@@ -244,51 +282,67 @@ If empty: `tail -n 50 run.log`, read the stack trace, attempt a trivial fix once
 
 **6. Analyse the results.**
 
-This is the defining step of this loop. Run whatever analysis will most increase your
-understanding of *why* this result happened and *what to try next*. You are not
-limited to a fixed menu — choose the analysis that fits the situation.
+**This step is mandatory and must produce real artefacts. If `iter<N>/analysis/` is
+empty after this step, you have not done the analysis. Do not proceed to step 7.**
 
-**Every analysis script you write goes in `<sandbox_root>/iter<N>/analysis/`.**
-**Every output it produces (plots, CSVs, text summaries) goes in `<sandbox_root>/iter<N>/results/`.**
-Run scripts from `iter<N>/analysis/` and redirect their output there:
+Execute the analysis plan you wrote in step 2b. Run each script listed in `plan.md`
+and record its output. Then ask: did the results match the predictions in the plan?
+If not, why not? That discrepancy is usually the most informative finding of all.
+
+**Every analysis script goes in `<sandbox_root>/iter<N>/analysis/`.**
+**Every output (CSVs, text, plots) goes in `<sandbox_root>/iter<N>/results/`.**
+
 ```bash
 python <sandbox_root>/iter<N>/analysis/<script>.py \
   > <sandbox_root>/iter<N>/results/<script>.txt 2>&1
 ```
-This keeps each iteration fully self-contained and auditable.
 
-To seed your thinking, here are classes of analysis that are often informative:
+The plan covers the hypothesis-specific analysis. After executing it, also ask:
+*"What else does this result suggest that I didn't anticipate?"* If something
+unexpected is visible — an unusual loss curve shape, a surprising class error pattern,
+a gradient anomaly not in the plan — dig into it with an additional script.
 
-- **Gradient diagnostics**: per-layer gradient norms, gradient flow across depth,
-  signs of vanishing or exploding gradients, dead parameter regions.
-- **Activation analysis**: layer-wise activation statistics (mean, variance, fraction
-  of zeros), saturation in sigmoid/tanh layers, dead ReLU neurons.
-- **Embedding inspection**: project learned representations (PCA / UMAP / t-SNE),
-  check class separability, look for collapsed or entangled clusters relative to
-  `<metric>`.
-- **Error analysis**: which examples or classes the model gets wrong, confusion
-  matrix patterns, hardest negatives, boundary cases.
-- **Loss curve and training dynamics**: train vs. val gap over epochs, when
-  overfitting begins, whether the run converged or was still improving at cutoff.
-- **Weight and parameter analysis**: weight magnitude distributions per layer,
-  sparsity, signs of pathological initialisation.
-- **Data and input profiling**: class balance, feature distributions, normalisation
-  issues, augmentation effects, batch statistics hitting the model.
-- **Computational profiling**: per-layer time or memory cost, where the budget is
-  being spent, whether a cheaper operation could replace an expensive one.
-- **Anything else** that the current results suggest. Do not limit yourself to the
-  above list. If you see a pattern in the log, a suspicious metric, or something
-  unexpected in the output — dig into it.
+Classes of analysis to draw from (choose what the hypothesis and results call for —
+this is not a checklist to execute mechanically):
 
-Write a concise **analysis summary** (3–8 bullet points) recording:
-- What you examined and why.
-- The most important finding.
-- What it implies for the next change.
+- **Gradient diagnostics**: per-layer gradient norms, flow across depth, vanishing/
+  exploding signals, dead parameter regions.
+- **Activation analysis**: layer-wise statistics (mean, variance, fraction of zeros),
+  saturation, dead ReLU neurons.
+- **Embedding inspection**: PCA / UMAP / t-SNE of learned representations, class
+  separability, collapsed or entangled clusters.
+- **Error analysis**: confusion matrix, hardest examples per class, failure modes,
+  boundary cases.
+- **Loss curve and dynamics**: train vs. val gap per epoch, when overfitting begins,
+  whether the run was still improving at cutoff.
+- **Weight and parameter analysis**: magnitude distributions per layer, sparsity,
+  pathological initialisation.
+- **Data and input profiling**: class balance, normalisation, augmentation effects,
+  batch statistics.
+- **Computational profiling**: per-layer cost, where the budget is being spent.
+- **Anything else the results suggest.** Do not limit yourself to the above.
 
-If the analysis reveals a useful quantity that is not currently being logged, add
-instrumentation to capture it in future runs — by editing the appropriate file in
-`<editable_files>`. This is a valid iteration on its own if the metric or diagnostic
-will materially improve future decisions.
+Write a concise **analysis summary** (3–8 bullet points):
+- For each script in the plan: what you found and whether it matched the prediction.
+- The single most important finding (expected or unexpected).
+- The specific empirical evidence (file + number/pattern) that will anchor the next
+  hypothesis. This is what step 2 of the next iteration must cite.
+
+If the analysis reveals a useful quantity not currently being logged, add
+instrumentation by editing the appropriate file in `<editable_files>`. This is a
+valid iteration on its own if the diagnostic will materially improve future decisions.
+
+**6b. Empirical justification gate.**
+
+Before logging or forming the next hypothesis, answer this question in one sentence:
+
+> *"The next change will be X because the analysis showed Y (from `results/<file>`,
+> value/pattern Z)."*
+
+If you cannot complete that sentence with a specific file reference and a concrete
+value or pattern — not a theoretical argument — go back to step 6 and run more
+analysis until you can. Proceeding without an empirical anchor is the failure mode
+this loop is designed to prevent.
 
 **7. Log to `results.tsv`. Do NOT commit this file — leave it untracked.**
 
