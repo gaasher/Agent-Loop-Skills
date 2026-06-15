@@ -152,9 +152,9 @@ commit	<metric>	status	description
 
 Do not commit `results.tsv` to git — leave it untracked.
 
-### 1j. Write resolved bindings to the sandbox
+### 1j. Write the run schema to the sandbox
 
-Write all resolved bindings to **`<sandbox_root>/loop.run.yaml`** so the run is
+Write all resolved values to **`<sandbox_root>/schema.yaml`** so the run is
 reproducible. Example shape (substitute real values):
 
 ```yaml
@@ -170,6 +170,9 @@ gate: time
 budget_minutes: 5          # time mode
 # budget_epochs: 10        # epochs mode
 ```
+
+This file is written once at setup. A copy is also placed inside each `iter<N>/`
+folder so every iteration is self-contained and auditable.
 
 ### 1k. Confirm and go
 
@@ -222,9 +225,11 @@ For every subsequent run, pick one focused experimental idea (what to try and wh
 then edit the relevant file(s) in `<editable_files>`. Keep changes focused — one idea
 per iteration.
 
-- *snapshots mode*: before editing anything, copy every file in `<editable_files>` into
-  `<sandbox_root>/iter<N>/code_snapshot/`, preserving relative paths. Then apply your
-  changes to the working files.
+- *snapshots mode*: before editing anything, create `<sandbox_root>/iter<N>/` and copy:
+  - every file in `<editable_files>` → `<sandbox_root>/iter<N>/code_snapshot/` (preserving relative paths)
+  - `<sandbox_root>/schema.yaml` → `<sandbox_root>/iter<N>/schema.yaml`
+
+  Then apply your changes to the working files.
 
 **3. Commit (branches mode) / snapshot already taken (snapshots mode).**
 
