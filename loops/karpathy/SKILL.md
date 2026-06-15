@@ -314,11 +314,8 @@ per iteration.
 <entrypoint> > <sandbox_root>/iter<N>/run.log 2>&1
 ```
 
-Hard timeout: if the run exceeds `2 × <budget_minutes>` minutes (time gate) or does
-not terminate after `<budget_epochs>` epochs + reasonable overhead (epoch gate), kill it
-and treat it as a crash. Each experiment should take roughly `<budget_minutes>` minutes
-total (plus a few seconds of startup/eval overhead). If a run exceeds double that, kill
-it and treat it as a failure — discard and revert.
+If the run has not terminated when it should have, kill it and treat it as a crash —
+discard and revert.
 
 **5. Read out the results.**
 
@@ -372,9 +369,9 @@ Append one tab-separated row:
 
 ---
 
-**Timeouts**: each experiment should take roughly `<budget_minutes>` minutes (+ a few
-seconds for startup and eval overhead). If a run exceeds `2 × <budget_minutes>` minutes,
-kill it and treat it as a failure (discard and revert).
+**Timeouts**: each experiment should take roughly `<budget>` (+ a few seconds for
+startup and eval overhead). If the run has not terminated when it should have, kill it
+and treat it as a failure — discard and revert.
 
 **Crashes**: if a run crashes (OOM, a bug, etc.), use your judgement. If it's something
 dumb and easy to fix (a typo, a missing import), fix it and re-run. If the idea itself
