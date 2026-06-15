@@ -43,4 +43,4 @@ asks you to supply those decisions at setup time, so it works with any project:
 | File | Role |
 | --- | --- |
 | `SKILL.md` | The full loop program — setup, experiment loop, logging, constraints. |
-| `bindings.example.yaml` | Copy to `loop.run.yaml` and fill in, or let the loop ask interactively. |
+| `schema.example.yaml` | Copy to `schema.yaml` and fill in, or let the loop ask interactively. |
