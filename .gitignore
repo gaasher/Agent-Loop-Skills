@@ -1,0 +1,36 @@
+# Local ML testbed — code for running loop test cases, not part of the published library
+/testbed/
+
+# Loop runtime artifacts (resolved bindings + ledgers live in the user's workspace)
+loop.run.yaml
+runs/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.ipynb_checkpoints/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# ML data / checkpoints / logs
+*.pt
+*.pth
+*.ckpt
+data/
+datasets/
+*.log
+wandb/
+mlruns/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
