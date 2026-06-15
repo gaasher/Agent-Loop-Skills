@@ -38,6 +38,12 @@ asks you to supply those decisions at setup time, so it works with any project:
 │   └── ...
 ```
 
+## Example run (CIFAR-10 testbed)
+
+9 experiments, 4 kept improvements. Baseline SmallCNN + SGD → 3-block BN-CNN + Adam: **0.544 → 0.632 val_acc**.
+
+![Autoresearch progress](../../assets/karpathy_progress.png)
+
 ## Files
 
 | File | Role |
