@@ -221,30 +221,48 @@ State explicitly:
 - What you predict will happen and why that finding supports the prediction.
 - Which file(s) in `<editable_files>` you will edit.
 
-**2b. Write an analysis plan.** Before touching any code, write
-`<sandbox_root>/iter<N>/analysis/plan.md` specifying exactly what you will examine
-*after this run* to evaluate whether the hypothesis held. The plan must be specific
-to the hypothesis — not a generic checklist. Ask: "If my hypothesis is correct, what
-should I see in the data? If it is wrong, what should I see instead?"
+**2b. Check the analysis history.** Before writing the plan, list every analysis
+type already run across all previous iterations by scanning the `analysis/` folders:
 
-Example for an AdamW hypothesis:
-```markdown
-# Analysis plan — iter8
-
-Hypothesis: AdamW weight_decay=0.01 regularises the FC better than SGD.
-
-To evaluate:
-1. gradient_norms.py — compare per-layer gradient norms vs iter7. If hypothesis
-   holds, FC gradient norm should be lower relative to conv layers.
-2. weight_magnitudes.py — compare FC weight L2 norm vs iter7. Expect smaller.
-3. loss_curve.py — compare train/val gap vs iter7. Expect val gap to narrow.
-
-If FC grad norm is unchanged → AdamW had no effect on the gradient; try explicit
-dropout or L2 on the FC directly.
+```bash
+ls <sandbox_root>/iter*/analysis/*.py 2>/dev/null
 ```
 
-This plan is written now, before the run, so the post-run analysis is driven by a
-question — not chosen opportunistically after seeing the result.
+You will use this list to avoid repeating the same analysis unless you have a specific
+reason to compare. A new iteration running `gradient_norms.py` again when you already
+have that data from iter3 is waste — unless you are explicitly comparing the two runs,
+in which case say so in the plan.
+
+**2c. Write an analysis plan.** Write `<sandbox_root>/iter<N>/analysis/plan.md`
+as a table of required deliverables — not prose. Each row is a commitment: a script
+you will write and run, the exact output file it produces, and what you will look for.
+The plan must be written before touching any code.
+
+Use this format:
+
+```markdown
+# Analysis plan — iter<N>
+
+Hypothesis: <one sentence>
+
+Previously covered (from history scan): gradient_norms, loss_curve, ...
+New dimensions this iteration: <what hasn't been measured yet>
+
+| script | output file | question it answers | expected if hypothesis holds | expected if hypothesis fails |
+|--------|-------------|--------------------|-----------------------------|------------------------------|
+| weight_magnitudes.py | results/weight_magnitudes.txt | Are FC weights shrinking under AdamW? | FC L2 norm < iter7 value | FC L2 norm unchanged |
+| val_per_class.py | results/val_per_class.txt | Which classes improved/regressed? | Uniform improvement across classes | Some classes regress |
+```
+
+Rules for the plan:
+- Every row is a hard commitment. You will write that script and that output file
+  must exist before step 7.
+- At least one row must cover a dimension **not yet measured** in any prior iteration
+  (the history scan enforces this).
+- The "expected if hypothesis fails" column is mandatory — it forces you to think
+  about what falsification looks like before you see the result.
+- The plan is written before the run, so analysis is question-driven, not chosen
+  after seeing whether the metric went up or down.
 
 **3. Snapshot / commit.**
 
@@ -282,41 +300,58 @@ If empty: `tail -n 50 run.log`, read the stack trace, attempt a trivial fix once
 
 **6. Analyse the results.**
 
-**This step is mandatory and must produce real artefacts. If `iter<N>/analysis/` is
-empty after this step, you have not done the analysis. Do not proceed to step 7.**
+**This step is mandatory and must produce real artefacts. Do not proceed to step 6b
+until every row in `plan.md` has a corresponding file in `results/`.**
 
-Execute the analysis plan you wrote in step 2b. Run each script listed in `plan.md`
-and record its output. Then ask: did the results match the predictions in the plan?
-If not, why not? That discrepancy is usually the most informative finding of all.
-
-**Every analysis script goes in `<sandbox_root>/iter<N>/analysis/`.**
-**Every output (CSVs, text, plots) goes in `<sandbox_root>/iter<N>/results/`.**
+**6a. Execute the plan.** For each row in the plan table, write the script and run it:
 
 ```bash
 python <sandbox_root>/iter<N>/analysis/<script>.py \
   > <sandbox_root>/iter<N>/results/<script>.txt 2>&1
 ```
 
-The plan covers the hypothesis-specific analysis. After executing it, also ask:
-*"What else does this result suggest that I didn't anticipate?"* If something
-unexpected is visible — an unusual loss curve shape, a surprising class error pattern,
-a gradient anomaly not in the plan — dig into it with an additional script.
+After each script, verify the output file exists and is non-empty:
+```bash
+ls -lh <sandbox_root>/iter<N>/results/<script>.txt
+```
 
-Classes of analysis to draw from (choose what the hypothesis and results call for —
-this is not a checklist to execute mechanically):
+If a script fails, fix it and re-run. Do not skip a row and mark it done.
 
-- **Gradient diagnostics**: per-layer gradient norms, flow across depth, vanishing/
-  exploding signals, dead parameter regions.
-- **Activation analysis**: layer-wise statistics (mean, variance, fraction of zeros),
-  saturation, dead ReLU neurons.
-- **Embedding inspection**: PCA / UMAP / t-SNE of learned representations, class
-  separability, collapsed or entangled clusters.
-- **Error analysis**: confusion matrix, hardest examples per class, failure modes,
-  boundary cases.
-- **Loss curve and dynamics**: train vs. val gap per epoch, when overfitting begins,
-  whether the run was still improving at cutoff.
-- **Weight and parameter analysis**: magnitude distributions per layer, sparsity,
-  pathological initialisation.
+**6b. Verify the checklist.** Run:
+```bash
+ls <sandbox_root>/iter<N>/results/
+```
+Cross-reference against `plan.md`. Every output file in the plan must appear. If any
+are missing, write and run the missing script now before continuing.
+
+**6c. Interpret against the plan.** For each row, state whether the result matched
+the "expected if hypothesis holds" or "expected if hypothesis fails" column. A mismatch
+is not a failure — it is information. A hypothesis that fails in an unexpected way
+is more valuable than one that fails as predicted.
+
+**6d. Opportunistic follow-up.** After executing the plan, ask: *"What does this
+result suggest that I didn't anticipate?"* If something unexpected is visible —
+an unusual loss shape, a class that is consistently wrong, a layer behaving
+differently than others — write one additional script to investigate it. This is
+where the most novel findings come from.
+
+Analysis dimensions to draw from (this is not a rotation schedule — choose what the
+hypothesis and results call for, while the history scan in step 2b ensures you don't
+repeat the same dimension every iteration without reason):
+
+- **Gradient diagnostics**: per-layer norms, flow, vanishing/exploding signals.
+- **Activation analysis**: layer-wise statistics, saturation, dead neurons.
+- **Embedding inspection**: PCA / UMAP / t-SNE, class separability, collapse.
+- **Error analysis**: confusion matrix, hardest examples, per-class failure modes.
+- **Loss curve and dynamics**: train/val gap per epoch, convergence, headroom.
+- **Weight and parameter analysis**: magnitude distributions, sparsity, init quality.
+- **Data and input profiling**: class balance, normalisation, augmentation effects.
+- **Computational profiling**: per-layer cost, budget utilisation.
+- **Representation similarity**: CKA or cosine similarity between layers or runs —
+  useful for understanding what changed structurally between two experiments.
+- **Prediction confidence**: softmax entropy distribution, calibration, over/under-
+  confident predictions per class.
+- **Anything else the results suggest.**
 - **Data and input profiling**: class balance, normalisation, augmentation effects,
   batch statistics.
 - **Computational profiling**: per-layer cost, where the budget is being spent.
