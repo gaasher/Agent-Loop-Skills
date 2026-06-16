@@ -58,7 +58,7 @@ Record as **`<host>`** = `claude-code` or `other`.
 
 Record as **`<metric>`** and **`<metric_direction>`** (`minimize` or `maximize`).
 The loop infers the grep pattern automatically — tries `^<metric>:` first, falls back
-to scanning `tail -n 20 run.log`.
+to scanning `tail -n 20 <run_log>`.
 
 ---
 
@@ -221,9 +221,22 @@ until the user confirms.** Once confirmed, build the sandbox and begin immediate
 
 ## 2. The experiment loop
 
+**`<run_log>`** refers to the file training output is captured in for a given
+iteration. By default this is `<sandbox_root>/iter<N>/<run_log>` (the stdout/stderr
+redirect the loop creates). If the harness writes its own log file under a different
+name or path, use that file instead — or use both. Wherever `<run_log>` appears
+below, substitute whichever file actually contains the training output for that run.
+
 **Everything in `<editable_files>` is fair game**: architecture, optimizer,
-hyperparameters, batch size, model size, data pipeline, loss function — on swing
-iterations especially, nothing is off limits. Full rewrites are encouraged.
+hyperparameters, batch size, model size, data pipeline, loss function, initialization
+scheme, evaluation strategy — on swing iterations especially, nothing is off limits.
+Full rewrites are encouraged.
+
+**Epoch efficiency is the objective, not just final score.** At every step, ask:
+*"Am I getting the most signal per budget unit?"* A change that gets the same final
+score in fewer effective steps is a real win — it means the remaining budget compounds
+on a stronger foundation. Improvements that accelerate convergence are just as
+valuable as improvements that raise the ceiling.
 
 **Simplicity criterion**: All else being equal, simpler is better. A small improvement
 that adds ugly complexity is not worth it. Conversely, removing something and getting
@@ -288,21 +301,50 @@ State explicitly:
 For the baseline (iteration 1), skip — run unmodified.
 
 **What counts as a swing:**
-A swing means the approach is *fundamentally* different from all previous swings.
-Not a tweak. Not adding BatchNorm to the same CNN. Examples of genuine swings:
-entirely different architectural family (MLP, ResNet block, attention, capsules),
-completely different training objective or loss, radically different data pipeline,
-a from-scratch rewrite motivated by a paper or idea not tried before. The changed code
-should look obviously different from the current best when diffed.
+A swing means the approach is *fundamentally* different from all previous swings —
+not a tweak, not adding one layer to the same backbone. The changed code should look
+obviously different from the current best when diffed.
+
+Most people swing along the architecture axis by default. Fight that reflex. The
+following axes are equally valid swing targets and are frequently underexplored:
+
+- **Architectural family**: the overall structural pattern of the network — how
+  information flows, how depth and width are arranged, whether connections skip layers,
+  whether computation is local or global.
+- **Initialization strategy**: how weights start matters as much as how they update.
+  Different init philosophies (magnitude-based, structure-preserving, input-statistics-
+  driven, sparse) lead to qualitatively different early training dynamics and can
+  compress the effective learning budget significantly.
+- **Data pipeline redesign**: not just swapping augmentation flavours, but rethinking
+  *how* data is presented to the model over time — the ordering, the sampling strategy,
+  the degree of randomness vs. determinism, and whether the full space of possible
+  views is covered systematically or left to chance across the budget.
+- **Per-component learning rate decoupling**: treat each distinct part of the model
+  (early layers, late layers, normalisation parameters, biases, heads) as having its
+  own optimal update magnitude. Scaling all of them together with a single LR is a
+  strong assumption that is often wrong.
+- **Evaluation strategy**: how predictions are aggregated at test time is a free
+  variable — single forward pass, multiple views, checkpoint averaging, output
+  calibration. The model you trained and the model you evaluate can differ more than
+  you think.
+- **Training objective restructuring**: what the model is directly optimised against
+  — the loss surface shape, target sharpness, auxiliary signals, consistency
+  constraints, or self-referential objectives.
+
+A genuine swing explores one of these axes in a way not yet attempted.
 
 **What counts as a merge:**
 Select two or more entries from `approaches.md`. Explicitly name what is taken from
-each. The result is a new architecture/config that could not be described as a minor
-variant of either parent.
+each. The result is a new approach that could not be described as a minor variant of
+either parent. When choosing what to take from each, prefer components that operated
+on *different axes* — they are more likely to combine additively rather than
+interfere.
 
 **What counts as an exploit:**
 A targeted, focused change to the current best approach based directly on an analysis
-finding. Changing one or two things at a time. Should NOT be a different architecture.
+finding. One or two things at a time — **decouple the axes**. If you want to test a
+different optimizer *and* a different LR, run them as separate iterations; combined
+changes obscure which one caused the result. Should NOT be a different architecture.
 
 **4. Snapshot / commit.**
 
@@ -321,10 +363,10 @@ finding. Changing one or two things at a time. Should NOT be a different archite
 
 ```bash
 # time-gated
-<sandbox_root>/run_with_timeout.sh > <sandbox_root>/iter<N>/run.log 2>&1
+<sandbox_root>/run_with_timeout.sh > <sandbox_root>/iter<N>/<run_log> 2>&1
 
 # epoch-gated
-<entrypoint> > <sandbox_root>/iter<N>/run.log 2>&1
+<entrypoint> > <sandbox_root>/iter<N>/<run_log> 2>&1
 ```
 
 If the run has not terminated when it should have, kill it and treat as a crash.
@@ -332,10 +374,10 @@ If the run has not terminated when it should have, kill it and treat as a crash.
 **6. Read the metric.**
 
 ```bash
-grep '^<metric>:' <sandbox_root>/iter<N>/run.log
+grep '^<metric>:' <sandbox_root>/iter<N>/<run_log>
 ```
 
-If empty: `tail -n 50 run.log`, read the stack trace, attempt a trivial fix once
+If empty: `tail -n 50 <run_log>`, read the stack trace, attempt a trivial fix once
 (typo, missing import). If fundamentally broken, log as `crash` and move on.
 
 **7. Analyse the results.**
@@ -369,8 +411,51 @@ Write a concise **analysis summary** (3–8 bullet points):
 - The most important finding.
 - What it implies for the next move (and whether it favours swing / merge / exploit).
 
-If the analysis reveals a useful quantity not currently being logged, add
-instrumentation by editing the appropriate file in `<editable_files>`.
+**Ablation discipline (applies after any `keep`).** If this iteration was kept,
+ask: *"Which part of the change caused the gain?"* If the change touched more than
+one axis (e.g. new architecture + new init + new LR), you don't actually know yet
+what worked. When this is true, flag it in the summary and consider an ablation
+exploit next: revert one component at a time to isolate the source of the improvement.
+Building on a multi-axis change without ablating is building on an unknown — a future
+swing or merge that duplicates the non-contributing parts wastes budget.
+
+**Cross-setting check (optional but high-value after a strong `keep`).** If the
+improvement is large, consider verifying it holds under a perturbation: a different
+budget length, a different seed, or a slightly different data fraction. An improvement
+that is robust across settings is worth building on; one that is fragile to the
+evaluation conditions is likely noise.
+
+**Extend the training log if it would help future analysis.**
+
+If the training script (or any script that produces the training log or metrics file)
+is in `<editable_files>`, you are allowed — and actively encouraged — to add new
+metrics and diagnostics to it. Every future iteration benefits from richer logs, and
+post-hoc analysis scripts can only work with what was recorded at training time. Do
+not wait for a specific finding to trigger this; after any run, ask: *"What would I
+wish I had logged right now?"*
+
+Note: some harnesses write metrics to a separate file (e.g. a JSON or CSV) rather
+than to the main training log. If that file's producer is in `<editable_files>`, it
+is equally fair game to extend.
+
+Useful things to consider adding (depending on what the current analysis is missing):
+
+- **Per-epoch diagnostics**: gradient norms per layer, weight update magnitudes,
+  activation statistics (mean, variance, fraction of zeros per layer).
+- **Per-class breakdown**: per-class accuracy or loss at each eval, not just the
+  aggregate — tells you whether a metric improvement is broad or driven by one class.
+- **Training dynamics signals**: train/val gap per epoch, learning rate at each step
+  if a scheduler is running, loss variance across batches.
+- **Model state snapshots**: save a checkpoint at the best val epoch so analysis
+  scripts can reload the model and probe it (embeddings, activations, gradients on
+  held-out examples) without re-running training.
+- **Anything else** that a post-hoc analysis script would need but currently has to
+  approximate or skip.
+
+Adding instrumentation is a valid iteration on its own — if richer logs will
+materially improve the quality of the next three analyses, spending one iteration on
+it is a good trade. Log it in `results.tsv` as `move_type=exploit` with description
+`add <metric> logging`.
 
 **8. Update `approaches.md` (swing and merge iterations only).**
 
@@ -383,11 +468,18 @@ If `move_type` is `swing` or `merge`, append an entry to
 - **move_type**: swing | merge
 - **iter**: <N>
 - **<metric>**: <value>  (status: keep | discard | crash)
+- **axes changed**: architecture | initialization | data pipeline | optimizer |
+                    learning rate schedule | evaluation | objective | other
 - **key ideas**: <bullet list of what makes this approach distinct>
 - **strengths** (from analysis): <what worked>
 - **weaknesses** (from analysis): <what didn't, or what the analysis suggests is missing>
-- **parents** (merge only): Approach X + Approach Y
+- **ablated?**: yes / no — if yes, which components were isolated and what was found
+- **parents** (merge only): Approach X + Approach Y — axes taken from each
 ```
+
+The `axes changed` field is what the merge step uses to find complementary approaches:
+two approaches that changed different axes are better merge candidates than two that
+both changed the architecture.
 
 This registry is the primary input to future merge decisions.
 
@@ -495,7 +587,7 @@ iter	<metric>	status	move_type	analysis_summary	description
 - Do not install new packages or add dependencies not already present.
 - Do not modify the evaluation harness — `<metric>` is the ground truth.
 - Do not pause the loop to ask the human for direction.
-- Always redirect training output to `run.log`. Never use `tee`.
+- Always redirect training output to `<run_log>` (default: `<sandbox_root>/iter<N>/<run_log>`). Never use `tee`.
 - The sandbox must be fully self-contained — no `../` escapes.
 - Do not commit `results.tsv` or `approaches.md` to git. Leave them untracked.
 - The scheduling rules in step 2 are hard constraints, not suggestions. If
