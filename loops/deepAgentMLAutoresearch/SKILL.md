@@ -41,10 +41,11 @@ and reuse them everywhere:
 - **`<lit>`** — the standard invocation every caller uses:
 
   ```
-  <lit_py> <skill_dir>/lit_search.py \
-    --cache-dir <sandbox_root>/literature/.cache \
-    --env-file  <sandbox_root>/literature/keys.env
+  <lit_py> <skill_dir>/lit_search.py --cache-dir <sandbox_root>/literature/.cache
   ```
+
+  API keys load automatically from the shared global file
+  `~/.config/agent-loop-skills/keys.env` (see §1j); you do not pass `--env-file`.
 
 Subcommands (all print JSON; on failure print `{"error","fallback"}` and exit non-zero
 — when that happens, fall back to your built-in WebSearch / WebFetch):
@@ -239,29 +240,41 @@ If this fails, stop and report it — the loop cannot ground itself without the 
 
 ---
 
-### 1j. API keys (interactive, secrets never enter the conversation)
+### 1j. API keys (shared global file; you fill it yourself, secrets never enter chat)
 
-All four keys are **optional** — missing ones degrade gracefully. But **Semantic
-Scholar's keyless pool is a shared global limit and is unreliable**, so a free
-`S2_API_KEY` is strongly recommended.
+Keys live in ONE shared file reused by every skill and project:
+`~/.config/agent-loop-skills/keys.env` (honoring `$XDG_CONFIG_HOME`). It is outside any
+repo, so it can't be committed. All keys are **optional** — missing ones degrade
+gracefully — but **Semantic Scholar's keyless pool is a saturated global limit**, so a
+free `S2_API_KEY` is strongly recommended. (See `docs/api-keys.md` for the standard.)
 
-1. Write the key template (placeholders + where to get each key):
+1. **Check what's already there** (the global file may already be populated from a prior
+   setup or another skill):
    ```bash
-   <lit_py> <skill_dir>/lit_search.py keys --env-file <sandbox_root>/literature/keys.env --init
+   <lit> keys
    ```
-2. Tell the user the file path and what each key adds:
+   If S2 (and whatever else you need) is already present, skip to step 4.
+2. **Ensure the file has slots** for this skill's keys (creates the file if missing;
+   appends only missing keys — never clobbers existing ones):
+   ```bash
+   <lit_py> <skill_dir>/lit_search.py keys --init
+   ```
+   It prints the file path. Tell the user what each key adds:
    - `S2_API_KEY` — free, **recommended**; reliable semantic search + snippets + graph.
    - `OPENALEX_EMAIL` — free; faster OpenAlex.
    - `OPENROUTER_API_KEY` — paid; enables `ask` (Perplexity Sonar) for Level-1 synthesis.
    - `BGPT_API_KEY` — free 50 results then paid; structured experimental evidence.
+3. **Ask the user to fill it themselves**, so secrets never enter this transcript:
+   > "Open `~/.config/agent-loop-skills/keys.env` in your editor, paste the keys you
+   >  want (S2 is free + recommended; the rest optional), and tell me when you're done."
 
-   Ask them to paste the keys they want **into that file themselves** (so the secrets
-   never enter this transcript). Offer to fill it for them only if they prefer.
-3. Verify (booleans only — you never see the values):
+   The in-session shortcut `! $EDITOR ~/.config/agent-loop-skills/keys.env` opens it
+   without leaving the loop. Offer to fill it for them only if they explicitly prefer.
+4. **Verify** (booleans only — you never see the values) and report live vs degraded:
    ```bash
    <lit> keys
    ```
-4. Report which tiers are **live** vs **degraded**, and proceed. Do not block on keys.
+   Report which tiers are **live** vs **degraded**, and proceed. Do not block on keys.
 
 ---
 
@@ -275,11 +288,13 @@ Create the layout and write the schema/ledgers:
 ├── results.tsv          ← experiment ledger, header only (written now)
 ├── literature/
 │   ├── corpus.tsv       ← literature ledger, header only (written now)
-│   ├── keys.env         ← gitignored key file (from 1j)
 │   ├── .cache/          ← lit_search on-disk cache
 │   ├── pdfs/            ← downloaded PDFs (fallback reads)
 │   └── text/            ← extracted LaTeX section text
 └── iter1/               ← created at loop start
+
+(API keys are NOT in the sandbox — they live in the shared global
+~/.config/agent-loop-skills/keys.env from §1j.)
 ```
 
 **`results.tsv` header** (tab-separated, no commas):
@@ -295,10 +310,8 @@ iter	level	paper_id	title	relevance	verdict	implemented	result
 - `implemented` ∈ {y, n} · `result` ∈ {helped, no-effect, hurt, pending}
 
 **`schema.yaml`**: write all resolved bindings, including `domain`, `research_scale`,
-`lit_py`, and which key tiers are live.
-
-Ensure `<sandbox_root>/literature/keys.env` is gitignored (add `keys.env` to the
-project's `.gitignore` if needed).
+`lit_py`, and which key tiers are live. (Keys themselves live in the global
+`~/.config/agent-loop-skills/keys.env`, never in the sandbox or schema.)
 
 ---
 
@@ -560,8 +573,8 @@ Do not commit `results.tsv` or `literature/` to git. Leave them untracked.
 - The sandbox must be self-contained — no `../` escapes.
 - A non-simplification change must have an empirical anchor **or** a literature basis;
   prefer both. Record the basis in `results.tsv`.
-- Never print or commit API keys. `keys` reports presence only. `keys.env` stays
-  gitignored.
+- Never print or commit API keys. `keys` reports presence only. Keys live in the shared
+  global `~/.config/agent-loop-skills/keys.env`, outside any repo.
 - When a literature tool returns `{"error","fallback"}`, fall back to WebSearch /
   WebFetch — never fabricate citations. Every cited paper must come from a real tool
   result you actually retrieved.
