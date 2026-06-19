@@ -39,3 +39,32 @@ You have your own metric: **selection hit-rate**. Improve it.
 4. Update the running hit-rate.
 
 Keep all judging artifacts terse and structured. Never edit the shipped `rubric.md`.
+
+## Example
+
+One verdict per idea (`schemas/verdict.schema.json`). The winner:
+```json
+{
+  "idea_id": "iter3-a2",
+  "scores": {"grounding": 5, "impact": 4, "feasibility": 5},
+  "rank": 1,
+  "decision": "select",
+  "critique": "Tightly grounded in the conv2 dead-unit finding; cheap and low-risk. Selected."
+}
+```
+
+A loser:
+```json
+{
+  "idea_id": "iter3-a1",
+  "scores": {"grounding": 2, "impact": 3, "feasibility": 4},
+  "rank": 3,
+  "decision": "reject",
+  "critique": "Generic 'switch to AdamW' with no tie to the analysis; lost on grounding."
+}
+```
+
+Then log the winner's prediction to `calibration.tsv`, e.g.:
+```
+3	iter3-a2	5	4	5	improve	+1-2%	high	+0.018	1
+```
