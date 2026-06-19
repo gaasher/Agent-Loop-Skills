@@ -1,0 +1,31 @@
+# Root project for agent-loop-skills.
+#
+# The published loops are STANDARD-LIBRARY ONLY by design — installing a loop is just
+# copying its folder into your Agent Skills directory; nothing here needs to be pip-
+# installed to use a loop. This pyproject exists for repo hygiene and local dev/test:
+# it pins a Python floor, declares the (empty) runtime dependency set, and gives a
+# blessed `uv run` environment for exercising helpers like
+# loops/deepAgentMLAutoresearch/lit_search.py.
+#
+# `requires-python = ">=3.9"` is deliberate: helpers are written 3.9-safe so they run
+# on an old system `python3`, the testbed env, or uv without modification. The testbed
+# (gitignored) keeps its own heavier pyproject (torch etc.) and is intentionally NOT a
+# uv workspace member here, so a fresh clone without the testbed still resolves.
+
+[project]
+name = "agent-loop-skills"
+version = "0.1.0"
+description = "Plug-and-play agentic loop templates (autoresearch, writing, brainstorming) for Agent Skills hosts."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []  # loops are standard-library only
+
+[project.optional-dependencies]
+dev = ["ruff>=0.6"]
+
+[tool.uv]
+package = false  # this repo is a collection of skill folders, not an importable package
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
