@@ -53,7 +53,7 @@ Record as **`<host>`** = `claude-code` or `other`. Proceed to 1a.
 > "What scalar metric should I minimize? (e.g. `val_loss`, `val_bpb`, `error_rate`)"
 
 Record as **`<metric>`**. The loop infers the grep pattern automatically — tries
-`^<metric>:` first; if that returns nothing, scans `tail -n 20 run.log` and locks
+`^<metric>:` first; if that returns nothing, scans `tail -n 20 <run_log>` and locks
 in the correct pattern.
 
 ---
@@ -251,6 +251,11 @@ loop immediately.
 
 ## 2. The experiment loop
 
+**`<run_log>`** refers to the file training output is captured in for a given
+iteration. By default this is `<sandbox_root>/iter<N>/<run_log>` (the stdout/stderr
+redirect the loop creates). If the harness writes its own log file under a different
+name or path, use that file instead — or use both.
+
 **Everything in `<editable_files>` is fair game**: change the architecture, the
 optimizer, the hyperparameters, the batch size, the model size. The only constraint is
 that the code runs without crashing and finishes within the budget. Everything else is
@@ -308,10 +313,10 @@ per iteration.
 
 ```bash
 # time-gated
-<sandbox_root>/run_with_timeout.sh > <sandbox_root>/iter<N>/run.log 2>&1
+<sandbox_root>/run_with_timeout.sh > <sandbox_root>/iter<N>/<run_log> 2>&1
 
 # epoch-gated
-<entrypoint> > <sandbox_root>/iter<N>/run.log 2>&1
+<entrypoint> > <sandbox_root>/iter<N>/<run_log> 2>&1
 ```
 
 If the run has not terminated when it should have, kill it and treat it as a crash —
@@ -320,16 +325,16 @@ discard and revert.
 **5. Read out the results.**
 
 ```bash
-grep '^<metric>:' <sandbox_root>/iter<N>/run.log
+grep '^<metric>:' <sandbox_root>/iter<N>/<run_log>
 ```
 
-If that returns nothing, scan `tail -n 20 run.log` to find where the value is printed
+If that returns nothing, scan `tail -n 20 <run_log>` to find where the value is printed
 and use that pattern going forward.
 
 **6. If the grep output is empty, the run crashed.**
 
 ```bash
-tail -n 50 <sandbox_root>/iter<N>/run.log
+tail -n 50 <sandbox_root>/iter<N>/<run_log>
 ```
 
 Read the Python stack trace and attempt a fix. Use your judgement:
@@ -423,7 +428,7 @@ d4e5f6g	0.000000	crash	double model width (OOM)
 - Do not install new packages or add dependencies not already present in the project.
 - Do not modify the evaluation harness — `<metric>` is the ground truth.
 - Do not pause the loop to ask the human for direction.
-- Always redirect training output to `run.log`. Never use `tee`. Never let output flood
+- Always redirect training output to `<run_log>` (default: `<sandbox_root>/iter<N>/<run_log>`). Never use `tee`. Never let output flood
   your context.
 - The sandbox (`<sandbox_root>/`) must be fully self-contained — no `../` path escapes.
 - Do not commit `results.tsv` to git. Leave it untracked.

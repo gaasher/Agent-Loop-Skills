@@ -52,7 +52,7 @@ Record as **`<host>`** = `claude-code` or `other`.
 
 Record as **`<metric>`** and **`<metric_direction>`** (`minimize` or `maximize`).
 The loop infers the grep pattern automatically — tries `^<metric>:` first, falls back
-to scanning `tail -n 20 run.log`.
+to scanning `tail -n 20 <run_log>`.
 
 ---
 
@@ -172,6 +172,12 @@ until the user confirms.** Once confirmed, build the sandbox and begin immediate
 
 ## 2. The experiment loop
 
+**`<run_log>`** refers to the file training output is captured in for a given
+iteration. By default this is `<sandbox_root>/iter<N>/<run_log>` (the stdout/stderr
+redirect the loop creates). If the harness writes its own log file under a different
+name or path, use that file instead — or use both. Wherever `<run_log>` appears
+below, substitute whichever file actually contains the training output for that run.
+
 **Everything in `<editable_files>` is fair game**: architecture, optimizer,
 hyperparameters, batch size, model size, data pipeline, loss function. The only
 constraints are that the code runs without crashing and finishes within `<budget>`.
@@ -281,10 +287,10 @@ Rules for the plan:
 
 ```bash
 # time-gated
-<sandbox_root>/run_with_timeout.sh > <sandbox_root>/iter<N>/run.log 2>&1
+<sandbox_root>/run_with_timeout.sh > <sandbox_root>/iter<N>/<run_log> 2>&1
 
 # epoch-gated
-<entrypoint> > <sandbox_root>/iter<N>/run.log 2>&1
+<entrypoint> > <sandbox_root>/iter<N>/<run_log> 2>&1
 ```
 
 If the run has not terminated when it should have, kill it and treat as a crash.
@@ -292,10 +298,10 @@ If the run has not terminated when it should have, kill it and treat as a crash.
 **5. Read the metric.**
 
 ```bash
-grep '^<metric>:' <sandbox_root>/iter<N>/run.log
+grep '^<metric>:' <sandbox_root>/iter<N>/<run_log>
 ```
 
-If empty: `tail -n 50 run.log`, read the stack trace, attempt a trivial fix once
+If empty: `tail -n 50 <run_log>`, read the stack trace, attempt a trivial fix once
 (typo, missing import). If fundamentally broken, log as `crash` and move on.
 
 **6. Analyse the results.**
@@ -363,9 +369,36 @@ Write a concise **analysis summary** (3–8 bullet points):
 - The specific empirical evidence (file + number/pattern) that will anchor the next
   hypothesis. This is what step 2 of the next iteration must cite.
 
-If the analysis reveals a useful quantity not currently being logged, add
-instrumentation by editing the appropriate file in `<editable_files>`. This is a
-valid iteration on its own if the diagnostic will materially improve future decisions.
+**Extend the training log if it would help future analysis.**
+
+If the training script (or any script that produces the training log or metrics file)
+is in `<editable_files>`, you are allowed — and actively encouraged — to add new
+metrics and diagnostics to it. Every future iteration benefits from richer logs, and
+post-hoc analysis scripts can only work with what was recorded at training time. Do
+not wait for a specific finding to trigger this; after any run, ask: *"What would I
+wish I had logged right now?"*
+
+Note: some harnesses write metrics to a separate file (e.g. a JSON or CSV) rather
+than to the main training log. If that file's producer is in `<editable_files>`, it
+is equally fair game to extend.
+
+Useful things to consider adding (depending on what the current analysis is missing):
+
+- **Per-epoch diagnostics**: gradient norms per layer, weight update magnitudes,
+  activation statistics (mean, variance, fraction of zeros per layer).
+- **Per-class breakdown**: per-class accuracy or loss at each eval, not just the
+  aggregate — tells you whether a metric improvement is broad or driven by one class.
+- **Training dynamics signals**: train/val gap per epoch, learning rate at each step
+  if a scheduler is running, loss variance across batches.
+- **Model state snapshots**: save a checkpoint at the best val epoch so analysis
+  scripts can reload the model and probe it (embeddings, activations, gradients on
+  held-out examples) without re-running training.
+- **Anything else** that a post-hoc analysis script would need but currently has to
+  approximate or skip.
+
+Adding instrumentation is a valid iteration on its own — if richer logs will
+materially improve the quality of the next few analyses, spending one iteration on
+it is a good trade. Log it in `results.tsv` with description `add <metric> logging`.
 
 **6b. Empirical justification gate.**
 
@@ -449,6 +482,6 @@ iter	<metric>	status	analysis_summary	description
 - Do not install new packages or add dependencies not already present.
 - Do not modify the evaluation harness — `<metric>` is the ground truth.
 - Do not pause the loop to ask the human for direction.
-- Always redirect training output to `run.log`. Never use `tee`.
+- Always redirect training output to `<run_log>` (default: `<sandbox_root>/iter<N>/<run_log>`). Never use `tee`.
 - The sandbox must be fully self-contained — no `../` escapes.
 - Do not commit `results.tsv` to git. Leave it untracked.
