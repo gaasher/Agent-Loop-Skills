@@ -270,11 +270,11 @@ free `S2_API_KEY` is strongly recommended. (See `docs/api-keys.md` for the stand
 
    The in-session shortcut `! $EDITOR ~/.config/agent-loop-skills/keys.env` opens it
    without leaving the loop. Offer to fill it for them only if they explicitly prefer.
-4. **Verify** (booleans only — you never see the values) and report live vs degraded:
-   ```bash
-   <lit> keys
-   ```
-   Report which tiers are **live** vs **degraded**, and proceed. Do not block on keys.
+4. **Verify and record.** Run `<lit> keys` — it prints a per-key note (booleans only,
+   never values): each key's `present` flag + what it gates, plus `live` and `missing`
+   lists. Report live vs degraded to the user, and **persist it** to `schema.yaml`
+   under `literature_tiers` so any later step can see it without re-checking. (`keys` is
+   network-free, so you can also re-run it anytime to refresh.) Do not block on keys.
 
 ---
 

@@ -73,7 +73,9 @@ def _keys(a):
     path = a.env_file or keys.default_env_path()
     if a.init:
         keys.ensure_template(path)
-    _emit({"env_file": path, "present": keys.status()})
+    out = {"env_file": path}
+    out.update(keys.report())
+    _emit(out)
 
 
 def _build_parser():
