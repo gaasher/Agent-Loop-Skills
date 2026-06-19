@@ -59,6 +59,18 @@ def status(names=None):
     return {name: bool(os.environ.get(name)) for name in names}
 
 
+def report():
+    """Per-key detail for an at-a-glance note: each key's presence + what it gates,
+    plus live/missing lists. Values are never included."""
+    present = status()
+    keys_detail = {name: {"present": present[name], "info": desc} for name, desc in KEYS}
+    return {
+        "keys": keys_detail,
+        "live": [n for n, v in keys_detail.items() if v["present"]],
+        "missing": [n for n, v in keys_detail.items() if not v["present"]],
+    }
+
+
 def _present_names(text):
     out = set()
     for line in text.splitlines():

@@ -12,15 +12,22 @@ import time
 import urllib.error
 import urllib.request
 
+try:
+    import fcntl  # POSIX (macOS/Linux) — used for the cross-process S2 throttle
+except ImportError:
+    fcntl = None
+
 USER_AGENT = "deepAgentMLAutoresearch/0.1 (agent-loop-skills lit_search.py)"
 
-# Minimum seconds between calls in the same throttle bucket. Search endpoints are the
-# rate-limited ones (Semantic Scholar caps unauthenticated search hard); metadata and
-# downloads are cheaper. Tune via configure().
-_MIN_INTERVAL = {"search": 1.0, "default": 0.2}
+# Minimum seconds between calls in the same throttle bucket.
+#   s2      — Semantic Scholar enforces 1 req/s CUMULATIVE across ALL its endpoints;
+#             1.1s leaves a small margin. Enforced cross-process (see _throttle).
+#   search  — other search APIs (OpenAlex, arXiv) — conservative in-process spacing.
+#   default — cheap metadata / downloads.
+_MIN_INTERVAL = {"s2": 1.1, "search": 1.0, "default": 0.2}
 
 _CACHE_DIR = None
-_LAST_CALL = {}  # bucket -> last call timestamp
+_LAST_CALL = {}  # bucket -> last call timestamp (in-process)
 
 
 def configure(cache_dir=None):
@@ -31,13 +38,54 @@ def configure(cache_dir=None):
         os.makedirs(cache_dir, exist_ok=True)
 
 
-def _throttle(bucket):
-    interval = _MIN_INTERVAL.get(bucket, _MIN_INTERVAL["default"])
+def _sleep_for(bucket, interval):
+    """In-process spacing for a bucket."""
     last = _LAST_CALL.get(bucket, 0.0)
     wait = interval - (time.time() - last)
     if wait > 0:
         time.sleep(wait)
     _LAST_CALL[bucket] = time.time()
+
+
+def _file_throttle(bucket, interval):
+    """Cross-process spacing: hold an exclusive file lock while enforcing the interval
+    against a shared timestamp file, so concurrent lit_search processes (e.g. parallel
+    research subagents) cannot collectively exceed the rate. Holding the lock during the
+    sleep serializes callers — exactly what a cumulative 1/s limit requires."""
+    lock_path = os.path.join(_CACHE_DIR, ".throttle_{}.lock".format(bucket))
+    ts_path = os.path.join(_CACHE_DIR, ".throttle_{}.ts".format(bucket))
+    lf = open(lock_path, "w")
+    try:
+        fcntl.flock(lf, fcntl.LOCK_EX)
+        last = 0.0
+        try:
+            with open(ts_path, "r") as tf:
+                last = float(tf.read().strip() or 0)
+        except (OSError, ValueError):
+            last = 0.0
+        wait = interval - (time.time() - last)
+        if wait > 0:
+            time.sleep(wait)
+        try:
+            with open(ts_path, "w") as tf:
+                tf.write(repr(time.time()))
+        except OSError:
+            pass
+    finally:
+        try:
+            fcntl.flock(lf, fcntl.LOCK_UN)
+        finally:
+            lf.close()
+
+
+def _throttle(bucket):
+    interval = _MIN_INTERVAL.get(bucket, _MIN_INTERVAL["default"])
+    # S2's 1 req/s is cumulative across all endpoints, and each lit_search call is a
+    # separate process — so enforce it cross-process when a cache dir is available.
+    if bucket == "s2" and _CACHE_DIR and fcntl is not None:
+        _file_throttle(bucket, interval)
+    else:
+        _sleep_for(bucket, interval)
 
 
 def _cache_key(method, url, body):

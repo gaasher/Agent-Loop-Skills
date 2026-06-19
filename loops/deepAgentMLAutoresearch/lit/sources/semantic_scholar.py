@@ -34,7 +34,7 @@ def search(query, limit=12, year=None, min_citations=0, open_access=False):
     if open_access:
         params["openAccessPdf"] = ""
     url = "{}/paper/search?{}".format(GRAPH, urllib.parse.urlencode(params))
-    data = request(url, headers=_headers(), bucket="search")
+    data = request(url, headers=_headers(), bucket="s2")
     papers = [from_s2(p) for p in (data.get("data") or [])]
     if min_citations:
         papers = [p for p in papers if (p.get("citations") or 0) >= min_citations]
@@ -46,7 +46,7 @@ def snippet(query, limit=10):
     pinpoint facts (a hyperparameter value, a reported number) without reading a paper."""
     params = {"query": query, "limit": min(limit, 100)}
     url = "{}/snippet/search?{}".format(GRAPH, urllib.parse.urlencode(params))
-    data = request(url, headers=_headers(), bucket="search")
+    data = request(url, headers=_headers(), bucket="s2")
     out = []
     for item in (data.get("data") or []):
         sn = item.get("snippet") or {}
@@ -69,7 +69,7 @@ def cite(paper_id, direction="references", limit=15, influential_only=False):
     if direction == "recommend":
         url = "{}/papers/forpaper/{}?fields={}&limit={}".format(
             REC, urllib.parse.quote(paper_id), PAPER_FIELDS, limit)
-        data = request(url, headers=_headers(), bucket="search")
+        data = request(url, headers=_headers(), bucket="s2")
         return [from_s2(p) for p in (data.get("recommendedPapers") or [])]
 
     if direction not in ("references", "citations"):
@@ -81,7 +81,7 @@ def cite(paper_id, direction="references", limit=15, influential_only=False):
     }
     url = "{}/paper/{}/{}?{}".format(
         GRAPH, urllib.parse.quote(paper_id), direction, urllib.parse.urlencode(params))
-    data = request(url, headers=_headers(), bucket="search")
+    data = request(url, headers=_headers(), bucket="s2")
     out = []
     for item in (data.get("data") or []):
         if influential_only and not item.get("isInfluential"):
