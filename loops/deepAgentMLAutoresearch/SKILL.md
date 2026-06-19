@@ -20,6 +20,14 @@ are hypotheses backed by both your own evidence and prior work: not guesses, and
 reinventing published techniques. **One change per run**, so the metric move is
 attributable to it.
 
+**The analysis is the spine.** Every change must be anchored in a diagnostic finding
+about *your* model — what is actually wrong, or where the headroom is, right now. The
+literature adds known recipes *on top of* that anchor; it never substitutes for it.
+Analysis is mandatory every iteration and must produce real artifact files (scripts +
+outputs), not prose. A loop that does great lit review but skips analysis has degraded
+into recipe-following — it can climb for a while on a known problem, then plateaus
+blind. Do not let that happen.
+
 **Assume your knowledge of specific library APIs and current methods is out of date.**
 When a change implements a published technique, ground the *implementation* in a real
 current example or the actual library in the repo — read it first; do not write it from
@@ -356,8 +364,10 @@ move is attributable. Other vetted findings are *queued* in `corpus.tsv` and pul
 future iterations — not bundled into one run. (Decouple the axes, like `standard`/
 `highTemp`.)
 
-**The first run**: iteration 1 is the unmodified baseline — skip planning/research (no
-diagnostics to ground a change yet), just run and analyse.
+**The first run**: iteration 1 is the unmodified baseline — skip the change-planning/
+research (no diagnostics to ground a change yet), but still do the **mandatory analysis**
+(write a baseline `plan.md` in 3b, run it in step 6). The baseline analysis produces the
+first empirical anchor that iteration 2's plan is built on, so it cannot be skipped.
 
 **FILE EDIT GUARD**: confirm any file is in `<editable_files>` before editing it.
 
@@ -435,18 +445,44 @@ gain per unit of complexity). State explicitly:
 - the **verify-todo**: the metric/log/analysis that will tell whether it helped (from
   the finding's `how_to_verify`) — checked in step 6.
 
-A non-simplification change needs an empirical anchor **or** a literature basis; prefer
-both.
+Every non-simplification change **must cite an empirical anchor** (file + value/pattern
+from the previous run's analysis). The literature basis is **additive** grounding — it
+strengthens the change, it does not replace the anchor. (Pure simplification/ablation is
+exempt.) A *swing* to a different architecture is anchored too — its anchor is a
+ceiling/structural finding ("the current family plateaus at X with headroom to spare",
+"it fails on exactly the cases requiring Y"), not a local pathology.
 
-**3. Snapshot / commit, then apply the one change.**
+**3a. Snapshot / commit, then apply the one change.**
 - *snapshots*: create `iter<N>/{code_snapshot,analysis,results}/`, copy every
   `<editable_files>` into `code_snapshot/`, copy `schema.yaml` to `iter<N>/`, then apply
-  the change. *(Iteration 1: snapshot the unmodified baseline.)*
+  the change. *(Iteration 1: snapshot the unmodified baseline — no change.)*
 - *branches*: apply the change, then `git commit -am "<short description>"`.
 
 When the change uses a technique/library feature, **ground the implementation in a real
 current example or the actual library** (read it) — don't write the API from memory.
 After applying, do a quick fail-fast check (it imports/parses) before spending a run.
+
+**3b. Write the analysis plan (BEFORE the run) and add any needed instrumentation.**
+Write `iter<N>/analysis/plan.md` as a deliverables table — each row is a commitment:
+
+| script | output file | question it answers | expected if the change helped | expected if not |
+|--------|-------------|---------------------|-------------------------------|-----------------|
+
+The plan **must** include:
+- the **verify-todo** metric(s) from 2d (does the change do what the literature predicted?);
+- **at least one diagnostic dimension not measured in any prior iteration** (scan
+  `iter*/analysis/` to avoid repeats);
+- periodically (and whenever a swing is on the table) a **ceiling/headroom probe** — is
+  the current architecture near its limit? (train/val plateau, representation collapse,
+  structural failure mode). This is what produces the anchor that licenses a *swing*.
+
+**Instrumentation (mandatory when needed).** If any planned measurement needs a metric
+or log that is not currently produced — e.g. logging `val_loss` alongside `val_acc`,
+per-layer grad norms, per-class accuracy — and the producing script is in
+`<editable_files>`, **add that logging NOW, before the run.** Writing the plan first is
+what forces this; do not discover at analysis time that the number you need wasn't
+logged. (Iteration 1 writes a baseline-characterization plan so it still produces the
+first empirical anchor.)
 
 **4. Run the experiment — redirect everything, never use `tee`.**
 ```bash
@@ -464,24 +500,45 @@ grep '^<metric>:' <sandbox_root>/iter<N>/<run_log>
 If empty: `tail -n 50 <run_log>`, read the trace, attempt one trivial fix (typo,
 missing import). If fundamentally broken, log as `crash` and continue.
 
-**6. Analyse the results.** (Same diagnostic discipline as `standardMLAutoresearch`.)
+**6. Analyse the results — MANDATORY; produces real artifacts.**
 
-Write analysis scripts to `iter<N>/analysis/` and outputs to `iter<N>/results/`. Draw
-from: gradient diagnostics, activation analysis, embeddings, error/confusion analysis,
-loss dynamics, weight/parameter stats, data profiling, compute profiling — whatever
-explains *why* this happened. **Audit the data itself** when relevant — looking at the
-data is one of the highest-yield diagnostics.
+This is the spine of the loop, not an afterthought. **Do not proceed to step 7 until
+every row in `plan.md` has a corresponding non-empty file in `iter<N>/results/`.** No
+hand-waving — analysis that didn't write a file did not happen.
 
-**Check this iteration's verify-todo** (from 2d): did the change do what the literature
-predicted? Record the answer — it sets the finding's `result` in step 7.
+- **6a. Execute the plan.** For each row in `plan.md`, write the script in
+  `iter<N>/analysis/` and run it, redirecting output to `iter<N>/results/`. Diagnostic
+  dimensions to draw from: gradient norms/flow, activation stats/saturation, embeddings
+  (PCA/CKA/collapse), error & confusion analysis, loss dynamics & **headroom**,
+  weight/parameter stats, data profiling, compute profiling. **Audit the data itself**
+  when relevant — looking at the data is one of the highest-yield diagnostics.
+- **6b. Checklist.** `ls iter<N>/results/` and cross-reference `plan.md`. Any missing
+  deliverable: write and run it now before continuing.
+- **6c. Interpret against the plan.** For each row, did the result match "expected if
+  the change helped" or "expected if not"? A mismatch is information, not a failure.
+- **6d. Check the verify-todo** (from 2d): did the change do what the literature
+  predicted? This sets the finding's `result` in step 7.
+- **6e. Opportunistic follow-up.** If something unexpected appears, write one more
+  script to chase it — this is where the most novel findings come from.
 
 Write a concise **analysis summary** (3–8 bullets): what you examined, the most
-important finding, and the specific empirical anchor (file + value/pattern) that will
-motivate the *next* iteration's plan.
+important finding (expected or not), whether the current architecture is near its
+ceiling, and the specific **empirical anchor** (file + value/pattern) that will motivate
+the next iteration's plan.
 
-**Extend the training log if it would help future analysis.** If the script that
-produces the log/metrics is in `<editable_files>`, add diagnostics (per-layer grad
-norms, per-class metrics, train/val gap, best-epoch checkpoint). Richer logs compound.
+**Empirical-justification gate.** Before step 7, you must be able to complete this
+sentence with a real file reference and a concrete value/pattern — not a theoretical
+argument:
+> *"The next change will be X because the analysis showed Y (from `results/<file>`,
+> value/pattern Z)."*
+
+If you cannot, go back to 6a and run more analysis until you can. Proceeding without an
+empirical anchor is the exact failure this loop is built to prevent.
+
+**Forward-looking instrumentation.** After analysing, ask *"what would I wish I had
+logged?"* — if the producing script is in `<editable_files>`, add it now (best-epoch
+checkpoint, extra per-epoch diagnostics) so future analyses are richer. (Instrumentation
+needed for *this* iteration's plan was already added in 3b.)
 
 **7. Log to the ledgers. Do NOT commit them — leave untracked.**
 
@@ -646,8 +703,12 @@ Do not commit `results.tsv` or `literature/` to git. Leave them untracked.
 - Do not pause the loop to ask the human for direction.
 - Always redirect training output to `<run_log>`. Never use `tee`.
 - The sandbox must be self-contained — no `../` escapes.
-- A non-simplification change must have an empirical anchor **or** a literature basis;
-  prefer both. Record the basis in `results.tsv`.
+- **Analysis is mandatory every iteration** and must produce real files in `results/`
+  (each `plan.md` row → a non-empty output file). A change with no analysis behind it is
+  not allowed.
+- Every non-simplification change **must cite an empirical anchor** from that analysis
+  (file + value/pattern). The literature basis is additive, never a substitute. Record
+  both in `results.tsv`.
 - Never print or commit API keys. `keys` reports presence only. Keys live in `keys.env`
   at the project root, which must stay gitignored.
 - When a literature tool returns `{"error","fallback"}`, fall back to WebSearch /
