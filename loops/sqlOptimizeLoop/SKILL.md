@@ -50,7 +50,7 @@ Example `loop.run.yaml`:
 db: ./test.db
 query_file: ./query.sql
 indexes_file: ./indexes.sql
-bench_cmd: "python3 ../../loops/queryOptimizeLoop/tools/bench.py --db ./test.db --query ./query.sql --setup ./indexes.sql --repeat 5"
+bench_cmd: "python3 ../../loops/sqlOptimizeLoop/tools/bench.py --db ./test.db --query ./query.sql --setup ./indexes.sql --repeat 5"
 sandbox_root: ./sandbox
 budget: 8
 patience: 3
