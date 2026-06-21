@@ -46,8 +46,17 @@ prints JSON; on failure it prints `{"error","fallback"}` and exits non-zero — 
 WebSearch/WebFetch. See the `literature-search` skill's `SKILL.md` for the full subcommand list and the
 optional free `S2_API_KEY`.
 
-**If the `literature-search` skill is not installed**, set `<novelty_check>: web` and use the host's
-WebSearch/WebFetch instead — the loop degrades cleanly and never hard-depends on the sibling skill.
+**Check at setup whether the skill is installed** — probe `<lit_skill_dir>/lit_search.py` (try the
+sibling-skill path, e.g. `~/.claude/skills/literatureSearch/`). If it is missing, **do not silently
+fall back** — tell the user it is not installed and offer the choice:
+- **Install it** (recommended for a real novelty check) — point them at the repo's install step
+  (`cp -r agent-loop-skills/loops/* ~/.claude/skills/`, adjusting the destination per host), or just
+  the one skill: `cp -r agent-loop-skills/loops/literatureSearch ~/.claude/skills/`. Then re-resolve
+  `<lit_skill_dir>` and use `<novelty_check>: lit`.
+- **Proceed without it** — set `<novelty_check>: web` (host WebSearch/WebFetch) or `none` (unverified
+  novelty). The loop degrades cleanly and never hard-depends on the sibling skill.
+
+Record the resolved choice in `<novelty_check>` so re-runs are non-interactive.
 
 ---
 
@@ -64,7 +73,9 @@ plain-text prompts.
 - **`<pass_threshold>`** — rubric score (0–100) a question must clear to count as strong (default 75).
 - **`<novelty_check>`** — how to check whether a question is already answered: `lit` (use the shared
   `literature-search` skill via `<lit>`, §0 — default when it is installed), `web` (use the host's
-  WebSearch/WebFetch), or `none` (skip; novelty is unverified judgment).
+  WebSearch/WebFetch), or `none` (skip; novelty is unverified judgment). When resolving this, run the
+  §0 install check: if the `literature-search` skill is absent, offer the user install-or-proceed
+  rather than defaulting silently.
 - **`<report>`** — the output question set (default `<sandbox_root>/questions.md`).
 - **`<sandbox_root>`** (default `./sandbox/`), **`<budget>`** (default 8 iterations).
 
