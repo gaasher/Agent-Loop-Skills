@@ -1,0 +1,9 @@
+# Example config for codeRefactorLoop.
+# Copy/fill this in as loop.run.yaml in your working directory (see SKILL.md §1).
+
+editable_files: [code/messy_stats.py]   # only these files may be refactored
+test_cmd: "python3 -m unittest"         # hard gate — must exit 0
+metric_cmd: "python3 ../../loops/codeRefactorLoop/tools/metrics.py code/messy_stats.py"
+sandbox_root: ./sandbox                  # snapshots + ledger live here
+budget: 8                                # max iterations
+patience: 3                              # stop after N no-improvement iterations
