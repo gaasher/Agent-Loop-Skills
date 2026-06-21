@@ -10,7 +10,7 @@ import sys
 
 from . import http, keys
 from .normalize import dedupe
-from .sources import arxiv, semantic_scholar as s2
+from .sources import arxiv, bgpt, openalex as oa, semantic_scholar as s2, sonar
 
 FALLBACK = "Fall back to your built-in WebSearch / WebFetch tools."
 
@@ -25,13 +25,27 @@ def _fail(msg, fallback=FALLBACK):
 
 
 def _search(a):
-    try:
-        papers = s2.search(a.query, a.limit, a.year, a.min_citations, a.open_access)
-    except RuntimeError as e:
-        _fail("Semantic Scholar failed: {}".format(e))
-        return
+    papers, warnings = [], []
+    if a.source in ("s2", "both"):
+        try:
+            papers += s2.search(a.query, a.limit, a.year, a.min_citations, a.open_access)
+        except RuntimeError as e:
+            warnings.append("semantic_scholar: " + str(e)[:140])
+            if a.source == "s2":
+                _fail("Semantic Scholar failed: {}".format(e))
+    if a.source in ("openalex", "both"):
+        try:
+            papers += oa.search(a.query, a.limit, a.year, a.min_citations, a.sort)
+        except RuntimeError as e:
+            warnings.append("openalex: " + str(e)[:140])
+            if a.source == "openalex":
+                _fail("OpenAlex failed: {}".format(e))
+    # dedupe across (and within) sources; S2 was appended first so it wins on ties.
     papers = dedupe(papers, a.limit)
-    _emit({"query": a.query, "count": len(papers), "results": papers})
+    out = {"query": a.query, "count": len(papers), "results": papers}
+    if warnings:
+        out["warnings"] = warnings
+    _emit(out)
 
 
 def _snippet(a):
@@ -45,6 +59,14 @@ def _cite(a):
 
 def _fulltext(a):
     _emit(arxiv.fulltext(a.ref, a.mode, a.section, a.out_dir))
+
+
+def _ask(a):
+    _emit(sonar.ask(a.question, a.model))
+
+
+def _bgpt(a):
+    _emit(bgpt.search(a.query, a.num, a.days_back or None))
 
 
 def _keys(a):
@@ -69,12 +91,16 @@ def _build_parser():
     sub = p.add_subparsers(dest="cmd", required=True)
 
     sp = sub.add_parser("search", parents=[common],
-                        help="semantic discovery (Semantic Scholar)")
+                        help="semantic discovery (Semantic Scholar + OpenAlex)")
     sp.add_argument("query")
     sp.add_argument("--limit", type=int, default=12)
     sp.add_argument("--year", help='e.g. "2020-" or "2018-2023"')
     sp.add_argument("--min-citations", type=int, default=0)
     sp.add_argument("--open-access", action="store_true", help="only papers with a free PDF")
+    sp.add_argument("--source", choices=["s2", "openalex", "both"], default="s2",
+                    help="default s2 (relevance); pass openalex or both to widen discovery")
+    sp.add_argument("--sort", choices=["relevance", "citations", "recent"], default="relevance",
+                    help="OpenAlex only; S2 stays in relevance order")
     sp.set_defaults(func=_search)
 
     sp = sub.add_parser("snippet", parents=[common],
@@ -98,6 +124,19 @@ def _build_parser():
     sp.add_argument("--section", help="latex mode: keyword to match section titles")
     sp.add_argument("--out-dir", default=None)
     sp.set_defaults(func=_fulltext)
+
+    sp = sub.add_parser("ask", parents=[common],
+                        help="Perplexity Sonar synthesis (Level-1 questions)")
+    sp.add_argument("question")
+    sp.add_argument("--model", choices=["sonar", "sonar-pro", "sonar-reasoning"], default="sonar")
+    sp.set_defaults(func=_ask)
+
+    sp = sub.add_parser("bgpt", parents=[common],
+                        help="bgpt.pro structured experimental-result extraction")
+    sp.add_argument("query")
+    sp.add_argument("--num", type=int, default=10)
+    sp.add_argument("--days-back", type=int, default=0)
+    sp.set_defaults(func=_bgpt)
 
     sp = sub.add_parser("keys", parents=[common],
                         help="report which API keys are present (booleans only)")

@@ -77,7 +77,8 @@ missing, do not silently fall back — tell the user and offer the choice:
 ## 1. Resolve bindings (setup — do this once)
 
 **MANDATORY INTERACTIVE SETUP. Ask every question and wait for the answer. Do NOT infer or
-auto-apply. If you skip any, you are doing it wrong.** Record into `schemas/config.schema.json`.
+auto-apply. If you skip any, you are doing it wrong.** Record into `schemas/config.schema.json`
+(see `schema.example.yaml` for a commented, filled-in template).
 
 ### 1.0 Detect host
 Check whether `AskUserQuestion` is available. **Yes → Claude Code path** (infer + recommend);

@@ -24,6 +24,21 @@ KEYS = [
      "on this tool rely on. Without it: S2 falls back to a saturated global shared pool "
      "(frequent 429s), and callers lean harder on arXiv full-text + their built-in "
      "WebSearch/WebFetch. Get one: https://www.semanticscholar.org/product/api#api-key-form"),
+    ("OPENALEX_EMAIL",
+     "OpenAlex polite pool | FREE (just an email you control). Faster, more reliable "
+     "OpenAlex discovery and citation/recency filtering (the `search --source openalex|both` path). "
+     "Without it: OpenAlex still works, on the slower shared anonymous pool. "
+     "Set to any email address."),
+    ("OPENROUTER_API_KEY",
+     "Perplexity Sonar via OpenRouter | PAID. Enables `ask` — fast synthesis of the landscape "
+     "with citations for high-level questions. "
+     "Without it: `ask` is disabled and callers fall back to built-in WebSearch. "
+     "Get one: https://openrouter.ai/keys"),
+    ("BGPT_API_KEY",
+     "bgpt.pro | FREE for 50 results, then PAID ($0.02/result). Enables `bgpt` — structured "
+     "experimental-result and limitations extraction for evidence-grading. "
+     "Without it: `bgpt` runs on the free tier until exhausted, then is disabled. "
+     "Get one: https://bgpt.pro/mcp/"),
 ]
 
 # === generic engine: identical across skills — do not edit ============================
