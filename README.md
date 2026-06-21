@@ -53,9 +53,9 @@ git clone https://github.com/gaasher/agent-loop-skills && \
 | [`MLAutoresearchSwarm`](loops/MLAutoresearchSwarm) | A swarm of autoresearch agents running in parallel. |
 | [`duelingMLAutoresearch`](loops/duelingMLAutoresearch) | Classical vs. learned approaches battle in parallel and compare notes. |
 | [`adversarialMLAutoResearch`](loops/adversarialMLAutoResearch) | Agents pitch theses; a judge runs deliberation rounds before each step. |
-| [`scientificWriterLoop`](loops/scientificWriterLoop) | Multi-agent draft → critique → improve writing and plots. |
+| [`scientificWriterLoop`](loops/scientificWriterLoop) | Five specialist judges (figures, science, style, formatting, code) critique a draft; an independent peer_reviewer grades it; a writer revises prose/figures/code until the score clears a threshold. |
 | [`tabularCleanupLoop`](loops/tabularCleanupLoop) | Single agent iteratively cleans tabular data. |
-| [`researchProposalLoop`](loops/researchProposalLoop) | Iteratively strengthens a research proposal. |
+| [`researchProposalLoop`](loops/researchProposalLoop) | ScholarEval grades a research proposal against the literature; a Judge scores the feedback and a Reviser iterates until it clears a passing grade. |
 
 ## Repo layout
 
