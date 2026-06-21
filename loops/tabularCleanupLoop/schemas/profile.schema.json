@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tabularCleanupLoop/profile.schema.json",
+  "title": "DataQualityProfile",
+  "description": "Deterministic per-version profile written to profiles/profile-v<N>.json each time a dataset version is scored. All sub-scores are computed by code (not LLM judgement) against the confirmed contract.",
+  "type": "object",
+  "required": ["version", "rows", "cols", "composite", "scores", "retention", "columns", "summary"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "string", "description": "Version id, e.g. 'v3'." },
+    "rows": { "type": "integer", "minimum": 0 },
+    "cols": { "type": "integer", "minimum": 0 },
+    "composite": {
+      "type": "number", "minimum": 0, "maximum": 1,
+      "description": "Weighted sum of the sub-scores per the objective weights."
+    },
+    "retention": {
+      "type": "number", "minimum": 0, "maximum": 1,
+      "description": "unique_informative_rows_kept / rows_in_v0 (cumulative)."
+    },
+    "scores": {
+      "type": "object",
+      "description": "Each label-free dimension sub-score in [0,1].",
+      "required": ["completeness", "validity", "consistency", "uniqueness", "plausibility"],
+      "additionalProperties": false,
+      "properties": {
+        "completeness": { "type": "number", "minimum": 0, "maximum": 1 },
+        "validity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "consistency": { "type": "number", "minimum": 0, "maximum": 1 },
+        "uniqueness": { "type": "number", "minimum": 0, "maximum": 1 },
+        "plausibility": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "duplicate_rows": { "type": "integer", "minimum": 0 },
+    "columns": {
+      "type": "array",
+      "description": "One entry per column with the stats that drive diagnosis.",
+      "items": {
+        "type": "object",
+        "required": ["name", "dtype", "contract_dtype", "pct_null", "n_unique"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "dtype": { "type": "string", "description": "Observed pandas dtype." },
+          "contract_dtype": { "type": "string", "description": "Dtype the contract expects." },
+          "pct_null": { "type": "number", "minimum": 0, "maximum": 1 },
+          "n_unique": { "type": "integer", "minimum": 0 },
+          "pct_type_invalid": { "type": "number", "minimum": 0, "maximum": 1, "description": "Fraction not parseable as contract_dtype." },
+          "n_constraint_violations": { "type": "integer", "minimum": 0, "description": "Cells failing range/set/regex/cross-column rules." },
+          "n_outliers": { "type": "integer", "minimum": 0 },
+          "variant_clusters": {
+            "type": "array",
+            "description": "Suspected categorical variants that should fold to one canonical value.",
+            "items": {
+              "type": "object",
+              "required": ["canonical", "variants"],
+              "additionalProperties": false,
+              "properties": {
+                "canonical": { "type": "string" },
+                "variants": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "summary": { "type": "string", "description": "4-8 line human-readable profile summary." }
+  }
+}

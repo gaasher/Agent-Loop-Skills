@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tabularCleanupLoop/ledger.schema.json",
+  "title": "LedgerRow",
+  "description": "One row appended to ledger.tsv per attempted transform (kept, reverted, or crashed). The JSON form here documents each tab-separated column.",
+  "type": "object",
+  "required": ["iter", "transform_id", "dimension", "quality_before", "quality_after", "delta", "retention", "status", "summary"],
+  "additionalProperties": false,
+  "properties": {
+    "iter": { "type": "integer", "minimum": 1, "description": "Iteration number." },
+    "transform_id": { "type": "string", "description": "e.g. 't03_canonicalize_country'; '-' for a rejected proposal that produced no transform file." },
+    "dimension": {
+      "type": "string",
+      "description": "The quality dimension the transform targeted.",
+      "enum": ["completeness", "validity", "consistency", "uniqueness", "plausibility"]
+    },
+    "quality_before": { "type": "number", "minimum": 0, "maximum": 1, "description": "Composite of <best> before this attempt." },
+    "quality_after": { "type": "number", "minimum": 0, "maximum": 1, "description": "Composite of the candidate (= before, if crashed)." },
+    "delta": { "type": "number", "description": "quality_after - quality_before." },
+    "retention": { "type": "number", "minimum": 0, "maximum": 1, "description": "Candidate cumulative retention." },
+    "status": {
+      "type": "string",
+      "enum": ["keep", "revert", "crash"],
+      "description": "keep = accepted as new <best>; revert = score/guardrail rejected; crash = transform errored."
+    },
+    "rows_affected": { "type": "integer", "minimum": 0, "description": "Rows changed or removed by the transform." },
+    "cells_affected": { "type": "integer", "minimum": 0, "description": "Cells changed (e.g. parsed, standardized, imputed)." },
+    "summary": { "type": "string", "description": "One-line description of the transform and outcome (no tabs)." }
+  }
+}

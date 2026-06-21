@@ -1,0 +1,68 @@
+# Example schema for tabularCleanupLoop.
+# The loop writes a filled-in copy (including the confirmed contract) to
+# <sandbox_root>/tcl/schema.yaml at setup time.
+
+# --- the artifact (READ-ONLY; v0 is a copy of it) ---------------------------
+artifact: ./data/raw_dump.csv
+format: csv                     # csv | tsv | parquet | xlsx | json (from extension)
+read_opts:                      # detected for delimited files; omit for parquet/xlsx
+  delimiter: ","
+  encoding: utf-8
+  header: 0
+  quotechar: '"'
+
+sandbox_root: ./sandbox         # tcl/ is created here
+
+# --- the data-quality objective (label-free composite; defaults shown) ------
+# Five DAMA/ISO-25012 dimensions; weights must sum to 1.0; each sub-score is in [0,1].
+objective:
+  weights:
+    completeness: 0.25          # non-null rate on columns the contract marks required
+    validity: 0.25              # parseable as contract dtype AND passing range/regex
+    consistency: 0.20           # canonical categories + cross-column rules
+    uniqueness: 0.15            # 1 - duplicate_rows/rows; declared keys unique
+    plausibility: 0.15          # numeric cells within plausible (non-outlier) bounds
+  target_composite: 0.99        # "all green" stop threshold
+
+# --- anti-gaming guardrails (a breach => revert regardless of score) --------
+guardrails:
+  retention_floor: 0.95         # cumulative unique_informative_rows_kept / rows_in_v0
+  protected_columns: ["*"]      # columns that must survive ("*" = all)
+  impute_cap: 0.20              # max fraction of a column's cells that may be imputed
+
+# --- budget & convergence ---------------------------------------------------
+gate: iterations                # iterations | tokens | time
+budget: 30                      # 30 iters  (or e.g. 500000 tokens / 30 minutes)
+epsilon: 0.005                  # min composite gain to count as an improvement
+plateau_K: 3                    # consecutive non-improving iters => plateau stop
+
+# --- the data contract (INFERRED at setup, then CONFIRMED by the user) ------
+# This is the sole authority for what "correct" means. One entry per column.
+contract:
+  columns:
+    customer_id:
+      dtype: int
+      nullable: false
+      key: true                 # declared unique
+    email:
+      dtype: string
+      nullable: false
+      regex: '^[^@\s]+@[^@\s]+\.[^@\s]+$'
+    country:
+      dtype: category
+      nullable: true
+      categories: [US, CA, GB, DE, FR]
+      merge_map:                # obvious variants folded to a canonical category
+        "U.S.A.": US
+        "usa": US
+        "united states": US
+    age:
+      dtype: int
+      nullable: true
+      min: 0
+      max: 120
+    signup_date:
+      dtype: date
+      nullable: false
+  cross_column_rules:
+    - "signup_date <= last_seen_date"
