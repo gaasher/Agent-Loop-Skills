@@ -60,7 +60,12 @@ recommended option and confirm via `AskUserQuestion`; Other: a quoted prompt):
   eval harness or data. **You MUST ask this explicitly — it is the code that gets mutated; do not
   assume or default it.** (Multi-select in Claude Code.)
 - **`<sandbox_root>`** — where `lae/` is created.
-- **`<gate>`** (`time`/`epochs`) + **`<budget>`** — the size of one full run.
+- **`<gate>`** (`time`/`epochs`) + **`<budget>`** — the size of one full run. This is the **fixed
+  eval budget applied to EVERY program** so scores are comparable, and the controller **enforces it
+  on each run** (injects/caps the program's own epoch/time setting). It is **not** a mutation target:
+  a child may not "train longer" to look better. Changing the budget is a *global* decision the user
+  makes by re-running the whole loop — never a per-program change. Identify the key that controls
+  duration now (e.g. `train.epochs`) so the controller can override it.
 
 No `iter_strategy` — this loop is sandbox-only (see §3).
 
@@ -134,8 +139,10 @@ for generation in 1..num_generations:                 # finite (= ceil(total_bud
                           (real copies, NOT symlinks; symlink only the data dir) — see §3
   run the C Mutators in parallel (spawn-or-degrade), each with roles/Mutator.md, its parent code,
       inspirations, the parent's artifacts, its child_dir, and the smoke/full budgets:
-      -> Mutator proposes a SEARCH/REPLACE diff, applies it in child_dir, cascade-evaluates,
-         returns {child_id, parent_id, approach_summary, sandbox_path, status, smoke_metric, metric}
+      -> Mutator proposes a SEARCH/REPLACE diff, applies it in child_dir, cascade-evaluates
+         AT THE FIXED <budget> (the controller injects/caps the epoch-or-time key on the run command,
+         overriding any duration the child set), returns
+         {child_id, parent_id, approach_summary, sandbox_path, status, smoke_metric, metric}
   for each returned child:
       append a `history.tsv` row (status, smoke/full metric, cell, kept?)
       if status == evaluated: compute niche -> cell; place in island map iff <metric> better (kept=y)
@@ -217,6 +224,10 @@ ranked by `metric`. Do not commit `lae/` to git; leave it untracked.
 - Stop at `<total_budget>`; reserve budget for the final synthesis. A child that overruns its gate
   is killed and recorded as `crash`.
 - Mutators compute nothing about the archive; the controller derives every niche and writes every log.
+- **The eval budget (epochs/time), the metric, and the eval/test split are FIXED and out-of-bounds
+  for mutation.** The controller injects `<budget>` (and the smoke budget) on every run, overriding
+  any duration the child set — so "train longer" / change-the-metric / change-the-test-set can never
+  win. Evolve the model/optimizer/data pipeline, not the compute or the scoring.
 - **Never symlink the entrypoint or any imported `.py` into a child dir** (it shadows the child's
   code with the baseline via `sys.path[0]`). Copy harness code; symlink only data. Verify each child
   ran its own code (the isolation sanity gate, §3) before placing it.

@@ -31,10 +31,18 @@ files and add new ones freely, but **never modify any existing file outside it**
 harness, the data, other programs). Keep changes self-consistent (if you reference a new config key
 or module, also add it).
 
+**Evolve the model, not the compute it's given.** You may NOT change the **training duration**
+(epochs / steps / time), the **metric**, or the **eval/test split** — those are the fixed evaluator,
+the controller runs you at `<budget>` regardless, and "train longer" / change-the-scoring is not a
+valid mutation (it would make your score incomparable to other programs). Mutate architecture,
+optimizer, regularization, the data *pipeline*, etc. — within the fixed budget.
+
 ## 2. Cascade-evaluate (smoke → full)
-Run from inside your child sandbox: `cd <sandbox_path> && <entrypoint>`. Your dir already has
-**real copies** of the harness + editable files (not symlinks), so `sys.path[0]` is your dir and
-your edited `model.py`/`dataset.py` are the ones that run.
+Run from inside your child sandbox: `cd <sandbox_path> && <entrypoint>`. The controller passes the
+**fixed budget** (smoke, then full) and it overrides any duration in your config — your run uses
+`<budget>` no matter what. Your dir already has **real copies** of the harness + editable files
+(not symlinks), so `sys.path[0]` is your dir and your edited `model.py`/`dataset.py` are the ones
+that run.
 1. **Smoke**: a cheap run at the `smoke` budget. If its `<metric>` does **not** clear the gate
    (≥ the parent's smoke score), stop — return `status: smoke_dropped` (don't waste a full run).
 2. **Full**: otherwise run at the `full` budget and record `<metric>`.
