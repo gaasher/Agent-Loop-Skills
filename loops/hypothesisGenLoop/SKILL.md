@@ -61,7 +61,8 @@ reliable; it is optional and the tool degrades without it.
 ## 1. Resolve bindings (setup — once)
 
 If a `loop.run.yaml` exists, load it, confirm in one line, and skip to §2. Otherwise resolve each
-binding, then write `loop.run.yaml`. **Detect host:** `AskUserQuestion` available → Claude Code (infer
+binding, then write `loop.run.yaml` (see `schema.example.yaml` for a commented template).
+**Detect host:** `AskUserQuestion` available → Claude Code (infer
 + recommend); else ask as quoted plain-text prompts.
 
 - **`<question>`** — the research question / domain (and any scope: field, population, constraints).
