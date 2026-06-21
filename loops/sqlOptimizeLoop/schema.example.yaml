@@ -1,0 +1,10 @@
+# Example config for sqlOptimizeLoop.
+# Copy/fill this in as loop.run.yaml in your working directory (see SKILL.md §1).
+
+db: ./test.db                # database file — read-only ground truth
+query_file: ./query.sql      # the query to optimize (primary artifact)
+indexes_file: ./indexes.sql  # optional DDL the loop may add to; omit for query-only tuning
+bench_cmd: "python3 ../../loops/sqlOptimizeLoop/tools/bench.py --db ./test.db --query ./query.sql --setup ./indexes.sql --repeat 5"
+sandbox_root: ./sandbox      # snapshots + ledger live here
+budget: 8                    # max iterations
+patience: 3                  # stop after N iterations with no new best

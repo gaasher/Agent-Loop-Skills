@@ -45,7 +45,7 @@ and present it as the recommended option. Otherwise ask each as a quoted plain-t
   `{"median_ms", "hash"}` for the query so the loop can compare speed and correctness.
 - **`<sandbox_root>`** (default `./sandbox/`), **`<budget>`** (default 8), **`<patience>`** (default 3).
 
-Example `loop.run.yaml`:
+Example `loop.run.yaml` (see `schema.example.yaml` for a commented template):
 ```yaml
 db: ./test.db
 query_file: ./query.sql
