@@ -37,10 +37,12 @@ to test it.
 
 ## 0. The literature toolchain (read once)
 
-All literature access goes through `tools/lit_search.py` (vendored, stdlib-only, no installs). Resolve
-once and reuse:
-- **`<skill_dir>`** — this folder. **`<lit_py>`** — `python3` (any ≥3.9).
-- **`<lit>`** — `<lit_py> <skill_dir>/tools/lit_search.py`. To reuse a cache across calls, append
+All literature access goes through the shared **`literature-search` skill** (`lit_search.py` over
+Semantic Scholar + arXiv) — stdlib-only, not a copy vendored here. Resolve once and reuse:
+- **`<lit_skill_dir>`** — where the `literature-search` skill is installed; after the repo install step
+  it sits as a **sibling** of this loop, e.g. `~/.claude/skills/literatureSearch/` (adjust per host).
+- **`<lit_py>`** — `python3` (any ≥3.9).
+- **`<lit>`** — `<lit_py> <lit_skill_dir>/lit_search.py`. To reuse a cache across calls, append
   `--cache-dir <sandbox_root>/literature/.cache` **after the subcommand** (it is a per-subcommand flag,
   not global), e.g. `<lit> search "<q>" --cache-dir <sandbox_root>/literature/.cache`.
 
@@ -55,6 +57,13 @@ once and reuse:
 On failure each prints `{"error","fallback"}` and exits non-zero — then fall back to your built-in
 **WebSearch/WebFetch** (tag that evidence `source:"web"`). `S2_API_KEY` (free) makes `snippet`/`cite`
 reliable; it is optional and the tool degrades without it.
+
+**Check at setup whether the skill is installed** — probe `<lit_skill_dir>/lit_search.py`. If it is
+missing, do not silently fall back — tell the user and offer the choice:
+- **Install it** (recommended; grounding depends on it) — the repo install step
+  (`cp -r agent-loop-skills/loops/* ~/.claude/skills/`, adjust per host), or just the one skill:
+  `cp -r agent-loop-skills/loops/literatureSearch ~/.claude/skills/`. Then re-resolve `<lit_skill_dir>`.
+- **Proceed without it** — use the host's WebSearch/WebFetch for all grounding (degraded but functional).
 
 ---
 
@@ -75,7 +84,7 @@ binding, then write `loop.run.yaml` (see `schema.example.yaml` for a commented t
 - **`<report>`** — final ranked set (default `<sandbox_root>/hypotheses.md`).
 
 **S2 key onboarding (optional, never block):** run `<lit> keys`; if `S2_API_KEY` is absent, run
-`<lit_py> <skill_dir>/tools/lit_search.py keys --init` (creates/append-only `keys.env` at the project
+`<lit> keys --init` (creates/append-only `keys.env` at the project
 root — confirm it is gitignored) and ask the user to paste their free key themselves (`! $EDITOR
 ./keys.env`), or say "skip" to run on the keyless pool / WebSearch. Never ask for the secret in chat.
 

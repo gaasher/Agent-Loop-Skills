@@ -21,6 +21,8 @@ patience: 2              # stop after this many rounds with no new kept hypothes
 # --- plumbing ----------------------------------------------------------------
 sandbox_root: ./sandbox
 report: ./sandbox/hypotheses.md   # final ranked hypothesis set
+# Literature toolchain: the shared `literature-search` skill (installed alongside, see SKILL §0).
+lit_skill_dir: ~/.claude/skills/literatureSearch
 lit_py: python3                   # any Python >=3.9 for the stdlib-only lit_search.py
 
 # Literature tiers are reported by `lit_search.py keys` at setup and persisted here.
