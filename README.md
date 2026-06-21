@@ -50,7 +50,7 @@ git clone https://github.com/gaasher/agent-loop-skills && \
 | [`highTemperatureMLAutoresearch`](loops/highTemperatureMLAutoresearch) | Mono-agent loop that pivots hard when it detects hill-climbing. |
 | [`multiAgentMLAutoresearch`](loops/multiAgentMLAutoresearch) | Subagents propose under a schema; a parent agent filters. |
 | [`deepAgentMLAutoresearch`](loops/deepAgentMLAutoresearch) | Standard loop with arXiv MCP access for grounded research. |
-| [`MLAutoresearchSwarm`](loops/MLAutoresearchSwarm) | A swarm of autoresearch agents running in parallel. |
+| [`lazyAlphaEvolve`](loops/lazyAlphaEvolve) | Simplified, ML-bent re-creation of AlphaEvolve/OpenEvolve (MAP-Elites + islands, diff-mutate, cascade-eval). |
 | [`duelingMLAutoresearch`](loops/duelingMLAutoresearch) | Classical vs. learned approaches battle in parallel and compare notes. |
 | [`adversarialMLAutoResearch`](loops/adversarialMLAutoResearch) | Agents pitch theses; a judge runs deliberation rounds before each step. |
 | [`scientificWriterLoop`](loops/scientificWriterLoop) | Multi-agent draft → critique → improve writing and plots. |
