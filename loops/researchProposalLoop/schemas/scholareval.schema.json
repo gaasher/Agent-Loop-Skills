@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "researchProposalLoop/scholareval.schema.json",
+  "title": "ScholarEval evaluation (one proposal, one iteration)",
+  "description": "The literature-grounded evaluation produced by roles/ScholarEval.md, faithful to arXiv 2510.16234: a Soundness module (per proposed method: Support / Contradictions / Suggestions) and a Contribution module (per contribution dimension: Strengths / Weaknesses / Suggestions). Every point cites real retrieved evidence by `cites` key so the Judge can apply its evidence gate. One file per iteration at <sandbox_root>/iter<N>/scholareval.json.",
+  "type": "object",
+  "required": ["iteration", "soundness", "contribution", "evidence"],
+  "additionalProperties": false,
+  "properties": {
+    "iteration": {"type": "integer", "minimum": 1},
+    "soundness": {
+      "type": "array",
+      "description": "One entry per method extracted from the proposal's methodology/experiments.",
+      "items": {
+        "type": "object",
+        "required": ["method", "support", "contradictions", "suggestions"],
+        "additionalProperties": false,
+        "properties": {
+          "method": {"type": "string", "description": "The proposed methodological component being assessed."},
+          "support": {"type": "array", "items": {"$ref": "#/$defs/point"},
+            "description": "Literature where similar applications of this method succeeded; why it transfers."},
+          "contradictions": {"type": "array", "items": {"$ref": "#/$defs/point"},
+            "description": "Literature where this method (in similar context) failed or is limited; the risk it signals."},
+          "suggestions": {"type": "array", "items": {"$ref": "#/$defs/point"},
+            "description": "Actionable fixes to raise the method's soundness."}
+        }
+      }
+    },
+    "contribution": {
+      "type": "array",
+      "description": "One entry per contribution dimension extracted from the proposal (e.g. system design, data, evaluation methodology, conceptual framework).",
+      "items": {
+        "type": "object",
+        "required": ["dimension", "strengths", "weaknesses", "suggestions"],
+        "additionalProperties": false,
+        "properties": {
+          "dimension": {"type": "string", "description": "The facet of contribution being compared against prior work."},
+          "strengths": {"type": "array", "items": {"$ref": "#/$defs/point"},
+            "description": "Genuinely novel advances along this dimension vs. the compared papers."},
+          "weaknesses": {"type": "array", "items": {"$ref": "#/$defs/point"},
+            "description": "Where the proposal's contribution along this dimension is already covered by prior work or is thin."},
+          "suggestions": {"type": "array", "items": {"$ref": "#/$defs/point"},
+            "description": "Actionable ways to sharpen the novelty/significance along this dimension."}
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "description": "The citation pool. Every `cites` key in any point MUST resolve to an entry here, and every entry MUST come from a real lit_search.py / WebFetch result actually retrieved this iteration — never from memory.",
+      "items": {
+        "type": "object",
+        "required": ["key", "title", "source", "snippet"],
+        "additionalProperties": false,
+        "properties": {
+          "key": {"type": "string", "description": "Short stable handle, e.g. 'S1', 'C3'."},
+          "title": {"type": "string"},
+          "source": {"type": "string", "enum": ["s2", "arxiv", "web"],
+            "description": "Which retrieval path produced it (s2 = lit_search search/snippet/cite; arxiv = fulltext; web = WebSearch/WebFetch fallback)."},
+          "id": {"type": ["string", "null"], "description": "Semantic Scholar paperId, arXiv id, or URL."},
+          "snippet": {"type": "string", "description": "The exact retrieved passage that backs claims citing this key. Verbatim, not paraphrased."}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "point": {
+      "type": "object",
+      "required": ["claim", "cites"],
+      "additionalProperties": false,
+      "properties": {
+        "claim": {"type": "string", "description": "One specific, self-contained statement."},
+        "cites": {"type": "array", "items": {"type": "string"},
+          "description": "Keys into `evidence`. An empty array means UNGROUNDED — the Judge discounts it."}
+      }
+    }
+  }
+}
