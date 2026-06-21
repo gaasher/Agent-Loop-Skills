@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LiteratureScout evaluation of a batch of candidate hypotheses",
+  "type": "object",
+  "required": ["round", "evaluations", "evidence"],
+  "additionalProperties": false,
+  "properties": {
+    "round": {"type": "integer"},
+    "evaluations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["hid", "novelty_assessment", "closest_prior_work", "support", "gap", "testability_note"],
+        "additionalProperties": false,
+        "properties": {
+          "hid": {"type": "string", "description": "candidate hypothesis id"},
+          "novelty_assessment": {
+            "type": "string",
+            "enum": ["novel", "incremental", "already-established", "unknown"],
+            "description": "is this hypothesis already known/tested in the literature?"
+          },
+          "closest_prior_work": {
+            "type": "array",
+            "description": "the most similar existing work; empty only if a genuine search found none",
+            "items": {
+              "type": "object",
+              "required": ["claim", "cites"],
+              "properties": {
+                "claim": {"type": "string"},
+                "cites": {"type": "array", "items": {"type": "string"}}
+              }
+            }
+          },
+          "support": {"type": "array", "items": {"$ref": "#/$defs/point"},
+                      "description": "prior evidence that makes the hypothesis plausible"},
+          "gap": {"type": "array", "items": {"$ref": "#/$defs/point"},
+                  "description": "what remains unknown that this hypothesis would resolve"},
+          "testability_note": {"type": "string",
+                               "description": "a concrete study/experiment that could confirm or refute it"}
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "title", "source", "snippet"],
+        "properties": {
+          "key": {"type": "string"},
+          "title": {"type": "string"},
+          "source": {"type": "string", "enum": ["s2", "arxiv", "web"]},
+          "id": {"type": "string"},
+          "snippet": {"type": "string", "description": "verbatim passage from a real retrieval"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "point": {
+      "type": "object",
+      "required": ["claim", "cites"],
+      "properties": {
+        "claim": {"type": "string"},
+        "cites": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

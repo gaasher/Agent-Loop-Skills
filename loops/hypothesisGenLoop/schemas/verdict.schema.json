@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Judge verdict over a batch of candidate hypotheses",
+  "type": "object",
+  "required": ["round", "verdicts"],
+  "additionalProperties": false,
+  "properties": {
+    "round": {"type": "integer"},
+    "verdicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["hid", "scores", "total", "keep", "rationale"],
+        "additionalProperties": false,
+        "properties": {
+          "hid": {"type": "string"},
+          "scores": {
+            "type": "object",
+            "required": ["novelty", "grounding", "testability", "specificity", "significance"],
+            "additionalProperties": false,
+            "properties": {
+              "novelty": {"type": "integer", "minimum": 0, "maximum": 5},
+              "grounding": {"type": "integer", "minimum": 0, "maximum": 5},
+              "testability": {"type": "integer", "minimum": 0, "maximum": 5},
+              "specificity": {"type": "integer", "minimum": 0, "maximum": 5},
+              "significance": {"type": "integer", "minimum": 0, "maximum": 5}
+            }
+          },
+          "total": {"type": "number", "description": "weighted 0-100"},
+          "keep": {"type": "boolean", "description": "clears the bar AND no gate fired"},
+          "gate_failures": {"type": "array", "items": {"type": "string"}},
+          "duplicate_of": {"type": ["string", "null"], "description": "hid of a pool hypothesis this restates, or null"},
+          "rationale": {"type": "string"}
+        }
+      }
+    }
+  }
+}
