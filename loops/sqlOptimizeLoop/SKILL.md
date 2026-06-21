@@ -88,9 +88,13 @@ stop and report: the query must run before it can be optimized.
    On keep, update the best and leave the working files in place.
 6. **Log** one ledger row (§3) and continue.
 
-**Stop** when `median_ms` has not improved for `<patience>` consecutive iterations, or at
-`<budget>`. Restore the working files to the **fastest** iteration and report: baseline vs best
-`median_ms` (and the speedup factor), the trajectory, and the winning query + indexes.
+**Stop** when no iteration has set a new best for `<patience>` consecutive iterations, or at
+`<budget>`. **Plateau counting:** increment the counter on *every* iteration that does not set a new
+best — whether it was discarded for changed results, a broken query, or an insufficient speed gain —
+and reset it to 0 on each `keep`. (So `<patience>` failed or fruitless attempts in a row ends the
+run; the `<budget>` is the hard cap regardless.) Restore the working files to the **fastest**
+iteration and report: baseline vs best `median_ms` (and the speedup factor), the trajectory, and the
+winning query + indexes.
 
 ---
 
