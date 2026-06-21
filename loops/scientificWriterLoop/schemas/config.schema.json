@@ -35,7 +35,9 @@
       "description": "Stop after this many consecutive iterations with no overall_score improvement."},
     "sandbox_root": {"type": "string", "default": "./sandbox",
       "description": "Where working copies, critiques, reviews, and the ledger live."},
-    "lit_py": {"type": "string", "default": "python3", "description": "Python >=3.9 for tools/lit_search.py."},
+    "lit_skill_dir": {"type": "string", "default": "~/.claude/skills/literatureSearch",
+      "description": "Install location of the shared `literature-search` skill (lit_search.py lives here)."},
+    "lit_py": {"type": "string", "default": "python3", "description": "Python >=3.9 for the literature-search skill's lit_search.py."},
     "literature_tiers": {
       "type": ["object", "null"],
       "additionalProperties": false,

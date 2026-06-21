@@ -76,7 +76,7 @@ recommend); else ask as quoted plain-text prompts.
 - **`<min_new>`** — the saturation threshold: a round is "dry" if it adds fewer than this many *new,
   matrix-changing* sources (default 2).
 
-**S2 key onboarding (optional, never block):** `<lit> keys`; if absent, `… keys --init` (append-only
+**S2 key onboarding (optional, never block):** `<lit> keys`; if absent, `<lit> keys --init` (append-only
 `keys.env` at project root, gitignored) and ask the user to paste their free key (`! $EDITOR
 ./keys.env`) or "skip". Never ask for the secret in chat.
 
