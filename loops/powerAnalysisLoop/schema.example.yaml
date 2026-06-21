@@ -1,0 +1,26 @@
+# Example bindings for the power-analysis loop.
+# The loop writes a filled-in copy of this to <sandbox_root>/loop.run.yaml at setup time.
+# You can also fill this in manually and point the loop at it to skip the interactive questions.
+
+hypothesis: "the new tutorial raises quiz scores"  # the claim the experiment tests
+
+# the primary outcome's type and the minimal effect of interest (fixes the effect size power is computed at)
+outcome:
+  type: two-sample-mean   # two-sample-mean (continuous) or two-proportion (binary)
+  baseline_mean: 70       # continuous: baseline mean
+  sd: 15                  # continuous: outcome SD
+  min_effect: 6           # continuous: smallest meaningful difference
+  # baseline_rate: 0.30   # two-proportion: baseline rate
+  # min_lift: 0.05        # two-proportion: smallest meaningful lift
+
+target_power: 0.80        # power the design must clear
+alpha: 0.05               # significance level
+
+# interpreter + vendored simulator; <skill_dir> is this skill's folder
+power_cmd: "python3 <skill_dir>/tools/power_sim.py --design two-sample-mean --effect 6 --sd 15 --alpha 0.05 --n 100"
+
+design_doc: ./sandbox/design.md  # the output design + preregistration this loop produces
+
+sandbox_root: ./sandbox   # absolute or relative path; created if missing; no ../ escapes
+
+budget: 8                 # max iterations before the loop stops
