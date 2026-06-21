@@ -33,8 +33,8 @@ When a change implements a published technique, ground the *implementation* in a
 current example or the actual library in the repo — read it first; do not write it from
 memory. Implementing from memory produces wrong imports and wrong argument names.
 
-The literature search is the bottleneck, so it is built to be cheap: a self-contained
-helper (`lit_search.py`, stdlib-only) with an on-disk cache, a triage-before-read
+The literature search is the bottleneck, so it is built to be cheap: the shared
+`literature-search` skill (`lit_search.py`, stdlib-only) with an on-disk cache, a triage-before-read
 funnel, parallel research subagents that each return a strict recipe schema, and a
 **backlog** (`corpus.tsv`) of vetted findings reused across iterations instead of
 re-researched.
@@ -45,29 +45,37 @@ You are the researcher. Do not pause to ask for permission once the loop is runn
 
 ## 0. The literature toolchain (read once)
 
-All literature access goes through `lit_search.py` in this skill folder. It is
-standard-library only (Python ≥3.9) and needs no installs. Resolve these once at setup
-and reuse them everywhere:
+All literature access goes through the shared **`literature-search` skill** (`lit_search.py`) — it
+is standard-library only (Python ≥3.9), needs no installs, and is **not vendored in this folder**.
+Resolve these once at setup and reuse them everywhere:
 
-- **`<skill_dir>`** — the folder containing this `SKILL.md` and `lit_search.py`.
+- **`<lit_skill_dir>`** — where the `literature-search` skill is installed; after the repo install
+  step it sits as a **sibling** of this loop, e.g. `~/.claude/skills/literatureSearch/` (adjust per host).
 - **`<lit_py>`** — a Python ≥3.9 interpreter for the helper. Default `python3`. This is
   **independent of `<run_cmd>`** (the heavy ML env) — the helper is stdlib-only, so the
   literature tooling and training never interfere.
 - **`<lit>`** — the standard invocation every caller uses:
 
   ```
-  <lit_py> <skill_dir>/lit_search.py --cache-dir <sandbox_root>/literature/.cache
+  <lit_py> <lit_skill_dir>/lit_search.py --cache-dir <sandbox_root>/literature/.cache
   ```
 
   API keys load automatically from `keys.env` at the project root (see §1j); you do not
   pass `--env-file`.
+
+**Check at setup whether the skill is installed** — probe `<lit_skill_dir>/lit_search.py`. If it is
+missing, do not silently fall back — tell the user and offer the choice:
+- **Install it** (recommended; this loop's grounding depends on it) — the repo install step
+  (`cp -r agent-loop-skills/loops/* ~/.claude/skills/`, adjust per host), or just the one skill:
+  `cp -r agent-loop-skills/loops/literatureSearch ~/.claude/skills/`. Then re-resolve `<lit_skill_dir>`.
+- **Proceed without it** — use the host's WebSearch/WebFetch for all retrieval/synthesis (degraded).
 
 Subcommands (all print JSON; on failure print `{"error","fallback"}` and exit non-zero
 — when that happens, fall back to your built-in WebSearch / WebFetch):
 
 | Subcommand | Use |
 |---|---|
-| `<lit> search "<q>" [--source both\|s2\|openalex] [--year 2020-] [--min-citations N] [--limit N]` | **Discover** — ranked papers with title, TLDR, abstract, citations, arxiv_id. |
+| `<lit> search "<q>" [--source s2\|openalex\|both] [--year 2020-] [--min-citations N] [--limit N]` | **Discover** — ranked papers with title, TLDR, abstract, citations, arxiv_id. **Default `--source s2`**; this loop should pass **`--source both`** to widen discovery across S2 + OpenAlex. |
 | `<lit> snippet "<q>" [--limit N]` | **Pinpoint a fact** — exact full-text passages from across the corpus (a hyperparameter value, a reported number). |
 | `<lit> cite <paperId> --direction references\|citations\|recommend [--influential-only]` | **Expand** — walk the citation graph from an anchor paper. |
 | `<lit> fulltext <arxivId> [--mode auto\|latex\|pdf] [--section <kw>]` | **Read a chosen paper** (see retrieval note below). |
@@ -248,10 +256,11 @@ Set **`<lit_py>`** = `python3` (override only if `python3` is <3.9; then use any
 interpreter, e.g. the run env). Confirm the helper imports and lists subcommands:
 
 ```bash
-<lit_py> <skill_dir>/lit_search.py --help
+<lit> --help
 ```
 
-If this fails, stop and report it — the loop cannot ground itself without the helper.
+If this fails, the `literature-search` skill is not installed — handle it via §0's install-or-proceed
+choice (install the skill, or proceed on WebSearch/WebFetch); do not silently continue.
 
 ---
 
@@ -274,7 +283,7 @@ free `S2_API_KEY` is strongly recommended. (See `docs/api-keys.md` for the stand
    keys (creates the file at the project root if missing; appends only missing keys —
    never clobbers existing ones):
    ```bash
-   <lit_py> <skill_dir>/lit_search.py keys --init
+   <lit> keys --init
    ```
    It prints the file path. Tell the user what each key adds:
    - `S2_API_KEY` — free, **recommended**; reliable semantic search + snippets + graph.
@@ -599,7 +608,7 @@ the dial, the contents of `literature_schema.json`, and the relevant analysis su
 
 **Retrieval funnel (the approved order):**
 ```
-1. DISCOVER   <lit> search  → N papers (title, TLDR, abstract, citations, arxiv_id)
+1. DISCOVER   <lit> search --source both  → N papers (title, TLDR, abstract, citations, arxiv_id)
 2. TRIAGE     read TLDRs/abstracts → pick the top-k promising   (no full text yet)
 3. GO DEEPER  (by need, within depth caps)
      a. need a specific fact/number  → <lit> snippet  (passages across the corpus)

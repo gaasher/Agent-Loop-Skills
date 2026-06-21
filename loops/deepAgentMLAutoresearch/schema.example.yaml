@@ -22,7 +22,9 @@ budget: 5                         # epochs per run (or minutes if gate: time)
 # --- literature grounding ---------------------------------------------------
 domain: "small-image classification"   # seeds query phrasing only; does NOT filter results
 research_scale: medium                 # low | medium | high | x-high  (see SKILL.md §4)
-lit_py: python3                        # interpreter for lit_search.py (stdlib-only, >=3.9)
+# Literature toolchain: the shared `literature-search` skill (installed alongside, see SKILL §0).
+lit_skill_dir: ~/.claude/skills/literatureSearch
+lit_py: python3                        # interpreter for the skill's lit_search.py (stdlib-only, >=3.9)
 
 # Key presence is recorded here at setup (booleans only — actual keys live in the
 # gitignored <sandbox_root>/literature/keys.env, never in this file).
