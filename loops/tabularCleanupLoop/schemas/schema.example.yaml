@@ -1,9 +1,10 @@
-# Example schema for tabularCleanupLoop.
-# The loop writes a filled-in copy (including the confirmed contract) to
+# Example schema for tabularCleanupLoop — ILLUSTRATIVE shape only.
+# This is a generic transactions table; it deliberately does NOT match any particular dataset.
+# The loop writes a filled-in copy (the confirmed contract + the compiled checklist) to
 # <sandbox_root>/tcl/schema.yaml at setup time.
 
 # --- the artifact (READ-ONLY; v0 is a copy of it) ---------------------------
-artifact: ./data/raw_dump.csv
+artifact: ./data/transactions_dump.csv
 format: csv                     # csv | tsv | parquet | xlsx | json (from extension)
 read_opts:                      # detected for delimited files; omit for parquet/xlsx
   delimiter: ","
@@ -13,56 +14,72 @@ read_opts:                      # detected for delimited files; omit for parquet
 
 sandbox_root: ./sandbox         # tcl/ is created here
 
-# --- the data-quality objective (label-free composite; defaults shown) ------
-# Five DAMA/ISO-25012 dimensions; weights must sum to 1.0; each sub-score is in [0,1].
+# --- the objective is the CHECKLIST compiled from the contract below ---------
+# No dimension weights, no epsilon, no composite score. Each contract rule compiles to one
+# deterministic check that reports a violation COUNT. The only tuning knob is per-column
+# `severity` (priority tier). `checks_passing_pct` is a reporting headline only.
 objective:
-  weights:
-    completeness: 0.25          # non-null rate on columns the contract marks required
-    validity: 0.25              # parseable as contract dtype AND passing range/regex
-    consistency: 0.20           # canonical categories + cross-column rules
-    uniqueness: 0.15            # 1 - duplicate_rows/rows; declared keys unique
-    plausibility: 0.15          # numeric cells within plausible (non-outlier) bounds
-  target_composite: 0.99        # "all green" stop threshold
+  priority: [severity_high, most_violations]   # how the next open check to attack is chosen
+  headline: checks_passing_pct                  # reported for humans; NOT a control signal
 
-# --- anti-gaming guardrails (a breach => revert regardless of score) --------
+# --- anti-gaming guardrails (a breach => revert regardless of violations cleared) -----
 guardrails:
-  retention_floor: 0.95         # cumulative unique_informative_rows_kept / rows_in_v0
+  retention_floor: 0.95         # cumulative unique_rows_kept / unique_rows_in_v0 (v0 deduped)
   protected_columns: ["*"]      # columns that must survive ("*" = all)
   impute_cap: 0.20              # max fraction of a column's cells that may be imputed
 
-# --- budget & convergence ---------------------------------------------------
+# --- budget (BACKSTOP only; the loop normally stops all-pass-or-residual) -----------
 gate: iterations                # iterations | tokens | time
 budget: 30                      # 30 iters  (or e.g. 500000 tokens / 30 minutes)
-epsilon: 0.005                  # min composite gain to count as an improvement
-plateau_K: 3                    # consecutive non-improving iters => plateau stop
 
 # --- the data contract (INFERRED at setup, then CONFIRMED by the user) ------
-# This is the sole authority for what "correct" means. One entry per column.
+# Sole authority for "correct". Each entry compiles to one or more checks (id in []).
+# NOTE: canonical categories are judged against the STORED value, so a non-canonical value
+# (e.g. "Paid" vs canonical "paid") is an OPEN violation the loop must rewrite — the merge_map
+# is repair guidance for that transform, NOT a check-time substitution.
 contract:
   columns:
-    customer_id:
-      dtype: int
-      nullable: false
-      key: true                 # declared unique
-    email:
+    txn_id:
+      dtype: int               # [txn_id.type]
+      nullable: false          # [txn_id.required]
+      key: true                # [txn_id.key]  -> unique
+      severity: high
+    account_email:
       dtype: string
-      nullable: false
-      regex: '^[^@\s]+@[^@\s]+\.[^@\s]+$'
-    country:
+      nullable: false          # [account_email.required]
+      regex: '^[^@\s]+@[^@\s]+\.[^@\s]+$'   # [account_email.regex]
+      severity: high
+    status:
       dtype: category
-      nullable: true
-      categories: [US, CA, GB, DE, FR]
-      merge_map:                # obvious variants folded to a canonical category
-        "U.S.A.": US
-        "usa": US
-        "united states": US
-    age:
-      dtype: int
-      nullable: true
-      min: 0
-      max: 120
-    signup_date:
-      dtype: date
       nullable: false
+      categories: [open, paid, shipped, refunded, cancelled]   # [status.categories]
+      merge_map:               # variant -> canonical (repair guidance for the transform)
+        "Paid": paid
+        "PAID": paid
+        "Shipped": shipped
+        "Cancelled": cancelled
+        "refund": refunded
+      severity: normal
+    amount:
+      dtype: float             # [amount.type]
+      nullable: false          # [amount.required]
+      min: 0                   # [amount.range]
+      outlier: {method: iqr, k: 3.0}   # [amount.outlier]  (omit / null to skip)
+      severity: normal
+    currency:
+      dtype: category
+      nullable: false
+      categories: [USD, EUR, GBP, JPY]   # [currency.categories]
+      severity: normal
+    created_at:
+      dtype: date              # [created_at.type]
+      nullable: false          # [created_at.required]
+      severity: normal
+    closed_at:
+      dtype: date
+      nullable: true
+      severity: normal
   cross_column_rules:
-    - "signup_date <= last_seen_date"
+    - id: created_le_closed    # [created_le_closed]
+      rule: "created_at <= closed_at"
+      dimension: consistency
