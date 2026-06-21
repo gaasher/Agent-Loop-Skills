@@ -1,0 +1,16 @@
+# Example bindings for the anomaly-investigation loop.
+# The loop writes a filled-in copy of this to <sandbox_root>/loop.run.yaml at setup time.
+# You can also fill this in manually and point the loop at it to skip the interactive questions.
+
+dataset: ./events.csv         # read-only data (or logs) to investigate
+
+# what was observed that looks wrong: the metric, where/when, and how big the deviation is
+anomaly: "conversions flat while sessions spiked 3x on 2026-06-14"
+
+analysis_cmd: python3         # interpreter for analysis snippets; stdlib csv/statistics preferred
+
+log: ./sandbox/investigation.md  # the investigation log this loop produces
+
+sandbox_root: ./sandbox       # absolute or relative path; created if missing; no ../ escapes
+
+budget: 8                     # max iterations before the loop stops

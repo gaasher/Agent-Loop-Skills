@@ -41,6 +41,11 @@ and present it as the recommended option. Otherwise ask each as a quoted plain-t
 - **`<log>`** — the investigation log file (default `<sandbox_root>/investigation.md`).
 - **`<sandbox_root>`** (default `./sandbox/`), **`<budget>`** (default 8 iterations).
 
+**The run schema.** These resolved bindings are written to `<sandbox_root>/loop.run.yaml` so re-runs are
+non-interactive. See **`schema.example.yaml`** (next to this skill) for the exact shape and field
+comments; the user can also fill that template in by hand and point the loop at it to skip the
+interactive questions.
+
 **Confirm and go.** Print the bindings; create nothing until the user confirms (skip only when
 `loop.run.yaml` already existed). Then initialise the ledger (§3) and start.
 

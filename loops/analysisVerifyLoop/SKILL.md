@@ -40,6 +40,11 @@ binding, then write `loop.run.yaml`. **Detect host:** `AskUserQuestion` availabl
 - **`<report>`** — the verified/revised draft (default `<sandbox_root>/verified.md`).
 - **`<sandbox_root>`** (default `./sandbox/`), **`<budget>`** (default 10 iterations).
 
+**The run schema.** These resolved bindings are written to `<sandbox_root>/loop.run.yaml` so re-runs are
+non-interactive. See **`schema.example.yaml`** (next to this skill) for the exact shape and field
+comments; the user can also fill that template in by hand and point the loop at it to skip the
+interactive questions.
+
 **Confirm and go.** Print the bindings; create nothing until the user confirms (skip only when
 `loop.run.yaml` existed). Then extract the claims (§2 iteration 0) and initialise the ledger (§3).
 
