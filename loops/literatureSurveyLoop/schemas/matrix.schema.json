@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Evidence / contradiction matrix for a literature survey",
+  "type": "object",
+  "required": ["question", "sources", "claims", "gaps"],
+  "additionalProperties": false,
+  "properties": {
+    "question": {"type": "string"},
+    "sources": {
+      "type": "array",
+      "description": "every paper/source admitted to the survey",
+      "items": {
+        "type": "object",
+        "required": ["key", "title", "source"],
+        "properties": {
+          "key": {"type": "string", "description": "short cite key, e.g. S1"},
+          "title": {"type": "string"},
+          "source": {"type": "string", "enum": ["s2", "arxiv", "web"]},
+          "id": {"type": "string"},
+          "year": {"type": ["integer", "null"]}
+        }
+      }
+    },
+    "claims": {
+      "type": "array",
+      "description": "the survey's findings/claims, each with where every relevant source stands",
+      "items": {
+        "type": "object",
+        "required": ["claim_id", "statement", "positions"],
+        "properties": {
+          "claim_id": {"type": "string"},
+          "statement": {"type": "string"},
+          "positions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["source_key", "stance", "snippet"],
+              "properties": {
+                "source_key": {"type": "string"},
+                "stance": {"type": "string",
+                           "enum": ["supports", "contradicts", "qualifies"]},
+                "snippet": {"type": "string", "description": "verbatim passage from a real retrieval"}
+              }
+            }
+          },
+          "is_contested": {"type": "boolean", "description": "true if sources both support and contradict it"}
+        }
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "description": "open questions / undercovered areas the survey surfaced",
+      "items": {"type": "string"}
+    }
+  }
+}
