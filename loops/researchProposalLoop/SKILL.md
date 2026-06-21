@@ -49,7 +49,9 @@ All literature access goes through `lit_search.py` in this folder — stdlib-onl
 Resolve once and reuse:
 - **`<skill_dir>`** — this folder (contains `SKILL.md`, `lit_search.py`).
 - **`<lit_py>`** — `python3` (any ≥3.9 interpreter).
-- **`<lit>`** — `<lit_py> <skill_dir>/lit_search.py --cache-dir <sandbox_root>/literature/.cache`
+- **`<lit>`** — `<lit_py> <skill_dir>/lit_search.py`. To reuse a cache across calls, append
+  `--cache-dir <sandbox_root>/literature/.cache` **after the subcommand** (it is a per-subcommand flag,
+  not global), e.g. `<lit> search "<q>" --cache-dir <sandbox_root>/literature/.cache`.
 
 Subcommands (all print JSON; on failure print `{"error","fallback"}` and exit non-zero —
 then fall back to your built-in **WebSearch/WebFetch**):
