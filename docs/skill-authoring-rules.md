@@ -166,7 +166,8 @@ and generic (named bindings, no hardcoded values). **Spawn-or-degrade**: spawn a
 subagent where the host supports it (Claude Code: `Agent`/Task tool), otherwise adopt the role inline
 in the same context. Detect the host once (is `AskUserQuestion` available?) and branch. Launch
 independent subagents **in one turn** for parallelism; require a structured return (validate against
-the role's `schemas/*.json`).
+the role's `schemas/*.json`). See [`compatibility.md`](compatibility.md) for which hosts get real
+isolation vs. the inline fallback.
 
 ## Bindings and the ledger
 - **No hardcoded paths/metrics/budgets** anywhere in `SKILL.md` or `roles/` — only named bindings
@@ -189,6 +190,12 @@ Three tiers, handled differently (K-Dense-confirmed). **A skill never ships or d
   absent; if it genuinely helps, surface a **consented, version-pinned** install — prefer **PEP 723
   inline deps + `uv run`** (the dep travels with the script, resolved on demand into a cache), else a
   copy-pasteable `uv pip install "<pkg>==<ver>"` hint. Never silent, never a hard stop.
+
+**API keys.** Skills that call external APIs share one gitignored `keys.env` at the project root (all
+keys optional, presence read as booleans, never pasted into chat). The installed reference
+implementation is the `literature-search` skill (`<lit> keys --init`); a new skill that needs its own
+keys copies `templates/keys.py` into its `tools/`. See [`api-keys.md`](api-keys.md) — an authoring
+reference; an installed `SKILL.md` reaches the convention through the sibling skill, never via `docs/`.
 
 ## Testing: eval-driven, Sonnet-run
 - **Build the test case first.** A loop's evaluation is its source of truth. Each loop gets a
