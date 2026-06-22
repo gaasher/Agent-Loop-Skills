@@ -1,0 +1,7 @@
+iter	hypothesis	effect	status
+0	dataset profile	-	profile
+1	enterprise orders average higher order value than consumer	$184.90 vs $109.16 (+69.4%; Cohen's d=2.13)	verified
+2	mobile channel has higher return rate than web/store	32.8% vs 8.2% (+24.6pp; RR=4.00)	verified
+3	longer tenure (signup_days) positively correlated with order_value	Pearson r=0.310; Q1 mean $109.94 vs Q4 mean $149.68 (+36.1%)	verified
+4	return rate differs meaningfully by region	North 20.2% vs West 12.6% (7.6pp spread; RR=1.60) — modest effect	refuted
+5	enterprise segment has lower return rate than consumer	enterprise 19.7% vs consumer 13.6% (+6.1pp) — wrong direction; likely mobile confound	refuted

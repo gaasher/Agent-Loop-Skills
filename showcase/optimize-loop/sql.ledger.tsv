@@ -1,0 +1,8 @@
+iter	median_ms	rows	hash_ok	status	description
+0	1131.754	10	-	baseline	correlated subquery no index
+1	5.613	10	yes	keep	rewrite correlated subquery as JOIN + GROUP BY
+2	1.149	10	yes	keep	add index orders(customer_id amount)
+3	1.203	10	yes	discard	add index customers(id name) — no gain
+4	1.055	10	yes	keep	aggregate orders before JOIN — subquery grouping avoids customer table scatter
+5	1.058	10	yes	discard	add partial index orders(customer_id) WHERE amount>500 — no gain
+6	1.134	10	yes	discard	CTE pre-aggregate variant — no gain vs inline subquery

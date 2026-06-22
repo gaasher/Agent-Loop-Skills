@@ -1,0 +1,8 @@
+iter	complexity	max_nesting	loc	status	description
+0	23	7	86	baseline	unmodified module
+1	23	7	83	keep	flatten summarize guard clauses to eliminate top-level nesting
+2	18	7	72	keep	replace manual min/max loop with builtin min() and max()
+3	18	3	64	keep	flatten categorize nested if/else into guard clauses
+4	18	3	61	keep	replace manual sum+count accumulation with sum() and len()
+5	15	3	45	keep	replace manual median sort and stdev loop with statistics.median and statistics.stdev
+6	16	2	44	discard	replace validation loop with any() comprehensions — complexity rose

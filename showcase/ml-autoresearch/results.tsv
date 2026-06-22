@@ -1,0 +1,11 @@
+iter	val_acc	status	analysis_summary	description
+1	0.5440	keep	budget binding (+0.021 last epoch); FC grad 57% vs first conv 3.3% — severe imbalance; 54% dead neurons in classifier ReLU	baseline
+2	0.5945	keep	BN helped +0.050; budget still binding; FC still 59.4% grad; train_loss=0.845 still underfitting	add BatchNorm after each Conv2d
+3	0.6235	keep	Adam +0.029 over SGD; budget still binding (last +0.024); train_loss=0.814 moderate fit; epoch-4 stall pattern persists	switch to Adam lr=0.001
+4	0.5730	discard	augmentation hurt every epoch (-0.050 at epoch 5); train_loss jumped to 1.253 vs 0.814; 5-epoch budget too short for augment to pay off	enable augmentation
+5	0.6315	keep	+0.008 over iter3; FC grad dropped 61.5->43.8%; 3rd conv at 15.9%; non-monotonic dip epoch3 (overfit signal: loss fell but val_acc -0.035)	add 3rd conv block (64->128) + MaxPool
+6	0.6370	keep	+0.005 over iter5; epoch-3 dip persists identically (weight_decay had no effect on instability); FC still memorizing faster than conv stabilizes	switch to AdamW weight_decay=0.01
+7	0.6185	discard	Dropout(0.3) fixed the epoch-3 dip (monotonic!) but over-regularized final perf; epoch 4-5 barely improved (+0.003); too aggressive	add Dropout(0.3) before FC
+8	0.6350	discard	Dropout(0.1) nearly fixed epoch-3 dip (+0.007 vs -0.037) but val_acc still -0.002 vs iter6; tiny complexity cost not justified	add Dropout(0.1) before FC
+9	0.6700	keep	cosine schedule fixed epoch-3 dip entirely (monotonic!); +0.033 over iter6; train_loss=0.692; budget still binding (+0.028 last)	add CosineAnnealingLR(T_max=5 eta_min=1e-5) to train.py
+10	0.6320	discard	lr=0.003 too aggressive; train_loss=0.911 at epoch 5 (vs 0.692 with lr=0.001); never recovered to iter9 level	increase lr to 0.003

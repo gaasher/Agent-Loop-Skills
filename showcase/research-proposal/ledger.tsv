@@ -1,0 +1,6 @@
+iter	grade	pass	soundness	contribution	evidence_quality	top_fix	revision_summary
+1	45.0	no	2	1	5	replace sole LLM-judge >=4.5 with fact-level + human-calibrated metrics	baseline (no revision)
+2	77.0	no	4	3	5	run source-internal vs external retrieval ablation to isolate novelty delta	demoted LLM-judge to fact-level metric + anti-gaming control; cross-family verifier + candidate-gating; scoped novelty + head-to-head baselines
+3	84.0	no	4	4	5	swap WiCE MAX for SummaC_Conv aggregation; reframe novelty vs Precision Grounding (C2)	added 3-arm source-internal vs web vs entity ablation; DocNLI/WiCE verifier; decoupled re-ranker + gate accuracy + recall floor; paired inevitability/negligible scoping
+4	84.0	no	4	4	5	impose summary structure (atomic-fact-per-sentence) to lift the localizer ceiling, not just measure it	swapped MAX->SummaC_Conv aggregation; measured cs.CL verifier P/R + Recall@k joint floor + error-correlation + localization accuracy; reframed novelty as extending Precision Grounding
+5	84.0	no	4	4	5	add Arm A/D evidence-overlap control + pre-registered directional hypothesis; fix SciFact attribution to Wadden et al.	atomic-fact-per-sentence structured summary (structural localization); pre-registered subset sizes + Wilson/bootstrap CIs; cs.CL-calibrated conv aggregator; 4th (curated-external-DB) ablation arm; direct self-preference-bias measurement

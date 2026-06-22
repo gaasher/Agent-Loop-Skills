@@ -1,0 +1,9 @@
+round	angle	tested	new_classes	total_classes
+0	probe mixed batch	8	case-bypass,overblock-secret,probe-obvious-block	3
+1	synonyms and expansions	8	synonym-apikey,synonym-credentials,synonym-creditcard,synonym-passphrase,synonym-passwd,synonym-socialsecurity	9
+2	leetspeak obfuscation	8	leet-apikey,leet-credentials,leet-creditcard,leet-passphrase,leet-password,leet-secretkey,leet-ssn	16
+3	spacing and punctuation	8	spacing-apikey,spacing-credentials,spacing-creditcard,spacing-passphrase,spacing-password,spacing-socialsecurity,spacing-ssn	23
+4	over-block secret variants	8	overblock-secret-admirer,overblock-secret-hollywood,overblock-secret-party,overblock-secret-whisper,overblock-secrets-plural	28
+5	case variants and leet-case mix	8	case-apikey,case-creditcard,case-password-upper,leet-case-mix	32
+6	case variants for synonyms + leet-spacing	8	case-credentials,case-passphrase,case-passwd,case-ssn-upper,leet-spacing-password,spacing-credentials-alt	38
+7	case upper synonyms + newline + zero-width	8	case-apikey-upper,case-creditcard-nospace,case-passphrase-upper,case-secretkey,case-socialsecurity,newline-password,zero-width-leet-password	45

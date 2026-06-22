@@ -1,0 +1,5 @@
+iter	n_per_group	power	open_flaws	change
+0	50	0.5045	6	draft: volunteers vs last-year cohort n=50; 6 open flaws identified
+1	100	0.8035	4	fixed confounding+randomization (concurrent RCT); solved n=100 for 80% power
+2	100	0.8035	2	fixed selection (full cohort not opt-in); fixed stopping rule (single end-of-study analysis)
+3	100	0.8035	0	fixed pre-specification (this doc IS the prereg lodged before data); fixed measurement (locked rubric + blinded ICC grading fidelity check); all flaws resolved
