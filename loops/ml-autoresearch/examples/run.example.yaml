@@ -1,0 +1,48 @@
+# Example bindings for ml-autoresearch.
+# The loop writes a filled-in copy to <sandbox_root>/loop.run.yaml at setup time.
+# If this file already exists in the working dir, the loop loads it and skips interactive setup.
+
+metric: val_acc
+metric_direction: maximize        # minimize or maximize
+
+run_cmd: "/path/to/venv/bin/python train.py"
+entrypoint: "/path/to/venv/bin/python train.py"
+
+editable_files:
+  - model.py
+  - config.yaml
+
+sandbox_root: ./sandbox
+
+iter_strategy: snapshots          # snapshots or branches
+run_tag: jun21                    # branches mode only (tag from today's date)
+
+gate: epochs
+budget: 5                         # epochs per run (or minutes if gate: time)
+
+# --- the literature dial ----------------------------------------------------
+# off → pure analysis-first loop: analyse each run, ground the next change in the
+#        diagnostics, no paper search. Everything below this line is ignored.
+# on  → after the analysis, also ground the change in the scientific literature
+#        (paper search, evidence grading, the corpus.tsv findings backlog).
+literature: off                   # off | on
+
+# === The settings below apply ONLY when literature: on =======================
+# Uncomment and fill these in for a literature-grounded run, e.g.:
+#
+# literature: on
+# domain: "small-image classification"   # seeds query phrasing only; does NOT filter results
+# research_scale: medium                 # low | medium | high | x-high (see roles/research-subagent.md)
+#
+# # Literature toolchain: the sibling `literature-search` skill (stdlib-only). After
+# # `cp -r loops/* ~/.claude/skills/` it sits beside this loop.
+# lit_skill_dir: ~/.claude/skills/literature-search   # invoked as <lit_py> <lit_skill_dir>/tools/lit_search.py
+# lit_py: python3                        # interpreter for lit_search.py (stdlib-only, >=3.9; independent of run_cmd)
+#
+# # Key presence recorded at setup (booleans only — actual keys live in the gitignored
+# # keys.env at the project root, never in this file). Run `<lit> keys --init`.
+# literature_tiers:
+#   s2: true             # S2_API_KEY present (free, recommended)
+#   openalex_email: true # OPENALEX_EMAIL present (free)
+#   sonar: false         # OPENROUTER_API_KEY present (paid; enables `ask`)
+#   bgpt: false          # BGPT_API_KEY present (free 50 then paid)

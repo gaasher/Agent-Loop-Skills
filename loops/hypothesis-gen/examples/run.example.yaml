@@ -1,0 +1,31 @@
+# Example bindings for the hypothesis-gen loop.
+# At setup the loop writes a filled-in copy to <sandbox_root>/loop.run.yaml (see SKILL.md Setup).
+
+# --- the question ------------------------------------------------------------
+# The research question / domain, plus any scope: field, population, constraints.
+question: >
+  What factors causally improve long-term retention of procedural skills in adult learners,
+  and which are underexplored relative to declarative-memory research?
+
+# --- generation + keep bar ---------------------------------------------------
+gen_n: 6                 # candidate hypotheses the Generator proposes per round
+keep_threshold: 65       # 0-100 rubric score a hypothesis must clear to enter the pool
+
+# --- grounding depth dial (see SKILL.md Setup) -------------------------------
+eval_scale: medium       # low | medium | high — LiteratureScout grounding depth
+
+# --- stopping ----------------------------------------------------------------
+budget: 6                # max rounds
+patience: 2              # stop after this many rounds with no new kept hypothesis
+
+# --- plumbing ----------------------------------------------------------------
+sandbox_root: ./sandbox
+report: ./sandbox/hypotheses.md   # final ranked hypothesis set
+# Literature toolchain: the sibling `literature-search` skill (installed alongside, see SKILL.md Setup).
+lit_skill_dir: ~/.claude/skills/literature-search
+lit_py: python3                   # any Python >=3.9 for the stdlib-only tools/lit_search.py
+
+# Literature tiers are reported by `<lit> keys` at setup and persisted here (presence only).
+# Keys themselves live in keys.env at the project root (gitignored) — never here.
+literature_tiers:
+  S2_API_KEY: false               # free, optional; makes snippet/cite reliable

@@ -1,0 +1,14 @@
+# Example config for the prompt-optimize loop.
+# Copy/fill this in as loop.run.yaml in your working directory (see SKILL.md, Setup).
+
+prompt_file: ./prompts/system.txt   # the prompt to optimize — the artifact the loop evolves
+eval_cmd: python3 eval.py           # REQUIRED. scores the current prompt_file; runs in the user's
+                                    #   env (may call an inference endpoint). Must print, on its LAST
+                                    #   line, {"score": <num>, "feedback": "<notes>"} or a bare number.
+                                    #   Treated as a black box — the loop never edits it.
+objective: maximize                 # maximize | minimize — what to do with the metric
+# one line on what the metric measures, e.g.: task accuracy on the held-out eval set
+target: 0.90                        # optional: stop early once score reaches this; omit to skip
+sandbox_root: ./sandbox             # prompt snapshots + ledger live here
+budget: 10                          # max iterations
+patience: 3                         # stop after N consecutive non-improving iterations (plateau)

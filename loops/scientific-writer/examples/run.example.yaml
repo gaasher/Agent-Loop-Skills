@@ -1,0 +1,40 @@
+# Example bindings for the scientific-writer loop (the bindings table in SKILL.md documents each).
+# At setup the loop writes a filled-in copy to <sandbox_root>/loop.run.yaml. Paths point at your
+# ORIGINALS; the loop copies them into the sandbox and never edits the originals in place.
+
+# --- the artifact + its evidence ---------------------------------------------
+draft_path: ./paper/draft.md          # the initial draft (markdown/text/tex)
+dataset_paths:                        # dataset file(s) the claims/figures derive from
+  - ./data/results.csv
+figures_dir: ./paper/figures          # dir of figure images referenced by the draft (or null)
+code_paths:                           # source files that produce plots/results; empty -> code axis dropped
+  - ./src/plots.py
+plot_command: "python3 ./src/plots.py"  # regenerates figures/results from code, run in YOUR env (or null = edit-only)
+
+# The paper's core finding/contribution, captured at setup and FROZEN.
+# The scientific_writer may strengthen the paper but may never change this (anti-gaming anchor).
+intent: >
+  Self-reported study hours are positively associated with exam scores in this cohort (n=24);
+  the contribution is a transparent, reproducible analysis with honest effect sizes.
+
+# --- style / venue (all optional) --------------------------------------------
+citation_style: APA                   # APA | MLA — the style formatting_judge enforces
+target_venue: NeurIPS                 # or null
+length_limits:                        # or null
+  abstract_words: 250
+  paper_words: 8000
+
+# --- the passing bar ---------------------------------------------------------
+pass_threshold: 85                    # 0-100 overall_score peer_reviewer must reach (and no hard gate)
+budget: 6                             # max iterations
+patience: 2                           # stop after this many iterations with no overall_score improvement
+
+# --- plumbing ----------------------------------------------------------------
+sandbox_root: ./sandbox
+# Literature toolchain: the sibling `literature-search` skill (installed alongside, see SKILL.md Setup).
+lit_skill_dir: ~/.claude/skills/literature-search
+lit_py: python3                       # any Python >=3.9 for the stdlib-only tools/lit_search.py
+
+# Literature key presence (booleans only) — persisted at setup; values live in keys.env at the project root.
+literature_tiers:
+  S2_API_KEY: false                   # free, recommended (snippet/cite verification)

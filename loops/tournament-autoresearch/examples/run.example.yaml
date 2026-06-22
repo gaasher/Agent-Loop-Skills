@@ -1,0 +1,25 @@
+# Example config for the tournament-autoresearch loop.
+# Copy/fill this in as loop.run.yaml in your working dir (see SKILL.md, Setup); the loop also
+# writes a filled-in copy to <sandbox_root>/loop.run.yaml at setup time.
+
+metric: val_acc
+metric_direction: maximize    # minimize or maximize
+
+run_cmd: "/path/to/venv/bin/python train.py"
+entrypoint: "/path/to/venv/bin/python train.py"
+
+editable_files:
+  - model.py
+  - config.yaml
+
+sandbox_root: ./sandbox
+
+iter_strategy: snapshots      # snapshots or branches
+run_tag: jun19                # branches mode only
+
+gate: epochs
+budget: 5                     # epochs per run (or minutes if gate: time)
+
+# --- adversarial tournament -------------------------------------------------
+n: 3                          # number of agents proposing competing ideas each round
+refine_rounds: 1              # propose -> critique -> refine rounds before the Judge decides

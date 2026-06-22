@@ -1,0 +1,21 @@
+# Example bindings for the karpathy loop.
+# Copy/fill this in as loop.run.yaml in your working directory (see SKILL.md, Setup).
+# The loop also drops a copy in each iter<N>/ so every iteration is self-contained.
+
+metric: val_loss            # scalar to minimize; must appear in training output
+
+run_cmd: "uv run train.py"  # full shell command to launch one training run
+entrypoint: "uv run train.py"  # same as run_cmd unless you need a separate launcher
+
+editable_files:
+  - train.py                # list every file the loop is allowed to modify
+
+sandbox_root: ./sandbox     # absolute or relative path; created if missing
+                            # for remote sandboxes add: remote: user@host:/path/to/sandbox
+
+iter_strategy: snapshots    # "snapshots" (same branch) or "branches" (git branch per run)
+run_tag: jun14              # only used when iter_strategy = branches
+
+gate: time                  # "time" or "epochs"
+budget_minutes: 5           # used when gate = time
+# budget_epochs: 10         # used when gate = epochs

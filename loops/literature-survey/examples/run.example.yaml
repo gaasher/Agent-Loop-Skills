@@ -1,0 +1,25 @@
+# Example bindings for the literature-survey loop.
+# At setup the loop writes a filled-in copy to <sandbox_root>/loop.run.yaml (see SKILL.md Setup).
+
+# --- the survey question -----------------------------------------------------
+question: >
+  Methods for parameter-efficient fine-tuning of large language models since 2021 —
+  scope: adapters, LoRA-family, prompt/prefix tuning; exclude full fine-tuning baselines.
+
+# --- depth + stopping --------------------------------------------------------
+eval_scale: medium        # low | medium | high — queries/walks/fulltext/new-source caps per round
+budget: 6                 # max rounds
+patience: 2               # stop after this many consecutive "dry" rounds
+min_new: 2                # saturation threshold: a round is "dry" below this many new matrix-changing sources
+
+# --- outputs -----------------------------------------------------------------
+matrix: ./sandbox/matrix.json   # structured matrix (validates schemas/matrix.schema.json); survey.md alongside
+sandbox_root: ./sandbox
+
+# --- literature toolchain (sibling `literature-search` skill, see SKILL.md Setup) ---
+lit_skill_dir: ~/.claude/skills/literature-search
+lit_py: python3           # any Python >=3.9 for the stdlib-only tools/lit_search.py
+
+# Literature key presence (booleans only); keys themselves live in keys.env at the project root.
+literature_tiers:
+  S2_API_KEY: false       # free, recommended (snippet/cite reliability)

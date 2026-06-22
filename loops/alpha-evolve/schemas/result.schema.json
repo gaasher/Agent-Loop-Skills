@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "alpha-evolve/result.schema.json",
+  "title": "Mutator result (one child program)",
+  "description": "What a Mutator returns after proposing a SEARCH/REPLACE diff to a parent program and cascade-evaluating the child. Minimal by design: the orchestrator COMPUTES the archive axes (complexity = log param count; diversity = avg edit-distance to a reference sample) from the child's sandbox — the Mutator does not.",
+  "type": "object",
+  "required": ["child_id", "parent_id", "approach_summary", "sandbox_path", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "child_id": {"type": "string", "description": "Unique id, e.g. 'g3-i1-a2'."},
+    "parent_id": {"type": ["string", "null"], "description": "The parent program's id; null for a GEN-0 baseline seed."},
+    "approach_summary": {"type": "string", "description": "One line: what the diff changed."},
+    "sandbox_path": {"type": "string", "description": "<sandbox_root>/lae/programs/<child_id>/ (holds the child's editable-file copies + logs + artifacts)."},
+    "status": {"type": "string", "enum": ["evaluated", "smoke_dropped", "crash"], "description": "evaluated = passed the smoke gate and got a full run; smoke_dropped = filtered by the cascade; crash = run failed."},
+    "smoke_metric": {"type": ["number", "null"], "description": "Stage-1 (smoke) <metric>."},
+    "metric": {"type": ["number", "null"], "description": "Full-eval <metric>; null unless status is 'evaluated'."}
+  }
+}

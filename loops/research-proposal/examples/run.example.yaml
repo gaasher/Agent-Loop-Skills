@@ -1,0 +1,37 @@
+# Example bindings for the research-proposal loop.
+# At setup the loop writes a filled-in copy to <sandbox_root>/loop.run.yaml.
+
+# --- the artifact ------------------------------------------------------------
+proposal_path: ./proposal.md        # problem + proposed methodology + planned experiments
+
+# The core research question + headline contribution, captured at setup and FROZEN.
+# The Reviser may strengthen the proposal but may never change this (anti-gaming anchor).
+intent: >
+  Can endogenous intracellular metabolites act as allosteric GPCR modulators, and can a
+  computational toolkit identify them? Headline contribution: an integrated allosteric-site +
+  ligand-screening pipeline plus a benchmark of validated modulators.
+
+# --- the passing bar ---------------------------------------------------------
+pass_threshold: 75                  # 0-100; loop stops when grade >= this AND no hard gate fires
+budget: 6                           # max iterations
+patience: 2                         # stop after this many consecutive no-improvement iterations
+
+# --- grading (frozen for the whole run; the Judge never tunes these) ---------
+grade_weights:
+  soundness: 0.45
+  contribution: 0.35
+  evidence_quality: 0.20            # must sum to 1.0
+
+# --- evaluation depth dial (see SKILL.md Setup) ------------------------------
+eval_scale: medium                  # low | medium | high
+
+# --- plumbing ----------------------------------------------------------------
+sandbox_root: ./sandbox
+# Literature toolchain: the sibling `literature-search` skill (installed alongside, see SKILL.md Setup).
+lit_skill_dir: ~/.claude/skills/literature-search
+lit_py: python3                     # any Python >=3.9 for the stdlib-only tools/lit_search.py
+
+# Literature tiers are reported by `<lit> keys` at setup and persisted here (presence only).
+# Keys themselves live in keys.env at the project root (gitignored) — never here.
+literature_tiers:
+  S2_API_KEY: false                 # free, strongly recommended (snippet + cite are S2-only)
