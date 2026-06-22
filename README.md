@@ -21,8 +21,9 @@ against a **real signal** until the work is actually better.
 <img src="assets/tournament-autoresearch.png" alt="tournament-autoresearch improving a CIFAR-10 model from 0.734 to 0.798 val_acc over 11 iterations" width="820">
 
 <sub><b>A real run.</b> The <code>tournament-autoresearch</code> loop on a CIFAR-10 model under a fixed 5-epoch budget —
-competing agents propose changes, a self-calibrating judge keeps one each step (●) and reverts the rest (✕).
-<code>0.734 → 0.798</code> val_acc, hands-off. Full ledger: <a href="showcase/tournament-autoresearch/results.tsv">showcase/tournament-autoresearch</a>.</sub>
+competing agents propose a change each step, a self-calibrating judge keeps the winners (green) and discards the regressions (gray):
+<code>0.734 → 0.798</code> val_acc, hands-off, 7 of 11 kept. Full ledger: <a href="showcase/tournament-autoresearch/results.tsv">showcase/tournament-autoresearch</a>.<br/>
+<i>Far from SOTA by design — a deliberately tiny CNN at 5 epochs on a laptop GPU (Apple MPS). The demo is the loop's decision-making, not the absolute accuracy.</i></sub>
 
 </div>
 
@@ -110,34 +111,19 @@ loop degrades gracefully (to WebSearch) if it's absent.
 Most skill repos tell you what a skill *is*. Here's what these loops actually *do* — real Sonnet runs,
 full ledgers in [`showcase/`](showcase).
 
-### 🔬 `ml-autoresearch` — analysis-first model improvement
-The loop reads *inside* each run (gradients, dead neurons, the loss curve) and grounds the next change in
-that evidence — not guesses. On a CIFAR-10 SmallCNN at a fixed 5-epoch budget it went **0.544 → 0.670 val_acc**,
-e.g. *"FC grad 57% vs first conv 3.3% — severe imbalance; 54% dead neurons"* → added BatchNorm; later
-*"cosine schedule fixed the epoch-3 dip entirely (monotonic!), +0.033"*. It also **reverts** what hurts
-(augmentation, over-aggressive LR). → [`showcase/ml-autoresearch`](showcase/ml-autoresearch/results.tsv)
-
-### ⚡ `optimize-loop` — speed up code or SQL, *correctness-gated*
-One evaluator-optimizer loop with a pluggable correctness gate + minimized metric. On a 1,500-customer /
-30,000-order SQLite DB it took a query from **1,131.75 ms → 1.055 ms (~1,073×)** — and the result-set hash
-matched the baseline on **every kept iteration**, so the speedup is real, not a wrong-but-fast rewrite:
-
-| iter | change | rows identical | median latency |
-|---|---|:--:|--:|
-| 0 | baseline (correlated subquery, no index) | — | 1131.75 ms |
-| 1 | rewrite correlated subquery → `JOIN` + `GROUP BY` | ✅ | 5.61 ms |
-| 2 | add composite index `orders(customer_id, amount)` | ✅ | 1.15 ms |
-| 4 | pre-aggregate orders before the join | ✅ | **1.055 ms** |
-
-In *code* mode the same loop cut a module's cyclomatic complexity **23 → 15** (nesting 7 → 3) with **13/13
-tests green** the whole way. → [`showcase/optimize-loop`](showcase/optimize-loop)
-
 ### 🧑‍⚖️ `tournament-autoresearch` — competing ideas, a self-calibrating judge
 `<n>` agents pitch competing changes each step; a judge critiques them, picks one, runs it, and recalibrates
-by comparing its *predicted* vs *realized* gain. **0.734 → 0.799 val_acc**, escaping the plateaus a
-single-thread loop gets stuck on:
+by comparing its *predicted* vs *realized* gain. On a CIFAR-10 SmallCNN under a fixed 5-epoch budget it
+climbed **0.734 → 0.798 val_acc**, keeping 7 of 11 changes and **reverting all 4 that regressed** —
+escaping the plateaus a single-thread loop gets stuck on. *(That's the run charted up top.)*
+→ [`showcase/tournament-autoresearch`](showcase/tournament-autoresearch/results.tsv)
 
-<div align="center"><img src="assets/tournament-autoresearch.png" width="760" alt="tournament-autoresearch 0.734 to 0.799 val_acc"></div>
+### 🔬 `ml-autoresearch` — analysis-first, every change traced to a cause
+This loop reads *inside* each run — gradient flow, dead neurons, the loss curve — and grounds the next
+change in that evidence rather than guessing: *"FC grad 57% vs first conv 3.3% — severe imbalance; 54% dead
+neurons"* → add BatchNorm; *"cosine schedule fixed the epoch-3 dip entirely (monotonic!), +0.033"*. It also
+**reverts** what hurts (augmentation, over-aggressive LR). The point isn't a leaderboard number — it's that
+every accepted change has a measured reason behind it. → [`showcase/ml-autoresearch`](showcase/ml-autoresearch/results.tsv)
 
 ### 📊 `data-analysis` — findings with a number behind every one
 Hypothesis → verify, stdlib-only. On a planted dataset it surfaced **3 real findings and correctly refuted 2**,
@@ -146,10 +132,11 @@ with effect sizes matching ground truth and **no hallucinations**: *enterprise v
 plausible-but-wrong claim once it spotted a mobile confound. → [`showcase/data-analysis`](showcase/data-analysis)
 
 <details>
-<summary><b>More real runs</b> — research-proposal, red-team, power-analysis…</summary>
+<summary><b>More real runs</b> — optimize-loop, research-proposal, red-team, power-analysis…</summary>
 
 | Loop | What the run did |
 |---|---|
+| [`optimize-loop`](showcase/optimize-loop) | Correctness-gated speedup: a SQLite query **1,131.75 ms → 1.055 ms (~1,073×)**, result-set hash matching baseline on **every kept iteration**; in *code* mode cut cyclomatic complexity **23 → 15** (nesting 7 → 3) with **13/13 tests green**. |
 | [`research-proposal`](showcase/research-proposal) | ScholarEval graded a proposal against the literature; Judge + Reviser iterated **grade 45 → 84** (soundness 2→4, contribution 1→4) over 5 rounds. |
 | [`red-team`](showcase/red-team) | Against a naive content filter, surfaced **all 5 planted weaknesses** (case bypass, leetspeak, spacing, synonyms, over-block) — 39 bypasses + 6 over-blocks — with a one-line root-cause fix each. |
 | [`power-analysis`](showcase/power-analysis) | Solved **n = 100/group for 80% power** via Monte-Carlo, fixed all 6 validity flaws, and emitted a full pre-registration. |
