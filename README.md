@@ -49,12 +49,16 @@ gh skill install gaasher/agent-loop-skills --agent <host>     # claude-code | co
 If a plain `owner/repo` scan misses our `loops/` layout, point it explicitly:
 `npx skills add gaasher/agent-loop-skills/tree/main/loops`.
 
-**Manual** (the open-standard dirs):
+**Manual** — clone, then copy the loops into your host's skills dir (pick the one line for your host):
+```bash
 git clone https://github.com/gaasher/agent-loop-skills
-# Choose ONE destination, depending on your host:
-cp -r agent-loop-skills/loops/* ~/.agents/skills/    # most open-standard hosts (Codex, Cursor, Pi, OpenClaw, …)
+
+# pick ONE destination for your host:
+cp -r agent-loop-skills/loops/* ~/.agents/skills/    # cross-tool: Codex, Cursor, Pi, OpenClaw, …
 cp -r agent-loop-skills/loops/* ~/.claude/skills/    # Claude Code
-# Hermes: hermes skills tap add gaasher/agent-loop-skills
+
+# Hermes uses its own registry instead of a skills dir:
+hermes skills tap add gaasher/agent-loop-skills
 ```
 
 Several research loops call the shared **`literature-search`** skill; installing everything puts it
@@ -176,3 +180,4 @@ agent-loop-skills/
 Each loop is a self-contained folder: a single `SKILL.md` plus any of `tools/ roles/ schemas/
 rubrics/ examples/`. See [`docs/skill-authoring-rules.md`](docs/skill-authoring-rules.md) for the
 authoring contract.
+
