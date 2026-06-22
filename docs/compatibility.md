@@ -50,7 +50,7 @@ Multi-role loops (judge / critic / mutator / reviser / track agents) are written
    where the host supports it (Claude Code); otherwise
 2. **Degrade** to reading the role file and adopting the role inline in the same context.
 
-The loop detects the host once (is `AskUserQuestion`/the Task tool available? → Claude Code) and branches.
+The loop detects the host once (is `AskUserQuestion` or the `Task` tool available? → Claude Code) and branches.
 This keeps one loop definition running everywhere while getting true isolation (and parallelism) where
 offered. See the authoring contract in
 [`skill-authoring-rules.md`](skill-authoring-rules.md#roles-and-spawn-or-degrade).
