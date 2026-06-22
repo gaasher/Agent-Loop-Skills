@@ -107,7 +107,6 @@ Several research loops call the shared **`literature-search`** skill; installing
 agent-loop-skills/
 ├── README.md
 ├── loops/                 # one self-contained, installable skill per folder (SKILL.md + 5 subfolders)
-├── templates/             # OPTIONAL authoring starters — never referenced at runtime
 └── docs/
     ├── skill-authoring-rules.md   # the rubric every loop is written against
     ├── authoring.md               # quick start for writing a new loop

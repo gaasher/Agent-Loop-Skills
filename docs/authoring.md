@@ -62,4 +62,4 @@ Append {change, signal, decision} to <ledger> each iteration.
 - <the few hard rules, each with its reason.>
 ```
 
-See [`../templates/`](../templates/) for blank starters.
+Copy this skeleton into `loops/<name>/SKILL.md` to start a new loop.
