@@ -151,7 +151,8 @@ don't repeat a diagnostic without a comparison reason.
 - **2b. Research the direction** (the default unless 2a yielded a still-valid lever). Turn the
   analysis's limitations into questions (tie limitations to questions), record them in
   `iter<N>/questions.md`, then dispatch **research subagents** — see `roles/research-subagent.md`
-  (spawn-or-degrade) at the dial's depth/effort (see that file's dial table for `<research_scale>`).
+  (spawn-or-degrade: real isolated subagents on Claude Code, otherwise run the research inline in this
+  context) at the dial's depth/effort (see that file's dial table for `<research_scale>`).
   Level 1 = high-level (architecture fit, prior approaches, does the literature show success); research
   L1 first — if it surfaces a compelling new direction that becomes the lever. Level 2 = specific
   micro-opts (init, weight-decay dynamics, attention/cache for the sequence length, norm placement,

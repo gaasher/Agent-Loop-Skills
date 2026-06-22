@@ -1,0 +1,17 @@
+{
+  "name": "agent-loop-skills",
+  "owner": {
+    "name": "gaasher",
+    "url": "https://github.com/gaasher"
+  },
+  "metadata": {
+    "description": "Plug-and-play agentic loop skills (autoresearch, literature & writing, data, optimization, red-team, power analysis) you bind to your own task at invocation time."
+  },
+  "plugins": [
+    {
+      "name": "agent-loops",
+      "source": "./",
+      "description": "Drop-in agentic loop skills (autoresearch, literature & writing, data, optimization, red-team, power analysis). Skills install namespaced as agent-loops:<name>."
+    }
+  ]
+}

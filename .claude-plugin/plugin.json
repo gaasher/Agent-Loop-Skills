@@ -1,0 +1,12 @@
+{
+  "name": "agent-loops",
+  "description": "Drop-in agentic loop skills — autoresearch, literature & scientific writing, data analysis, code/SQL/prompt optimization, red-teaming, and power analysis. Each loop binds to your own task at invocation time.",
+  "version": "0.1.0",
+  "author": {
+    "name": "gaasher"
+  },
+  "homepage": "https://github.com/gaasher/agent-loop-skills",
+  "repository": "https://github.com/gaasher/agent-loop-skills",
+  "license": "MIT",
+  "skills": "./loops/"
+}
