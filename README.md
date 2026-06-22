@@ -2,7 +2,7 @@
 
 # agent-loop-skills
 
-### `while (!done) loop()` — drop-in agentic **loops**, packaged as open-standard **Agent Skills**.
+### Loop until it's better — drop-in agentic **loops**, packaged as open-standard **Agent Skills**.
 
 Autoresearch · scientific writing · data analysis · code/SQL/prompt optimization · red-teaming —
 each a *generic, reusable loop* you bind to **your own task at invocation time**, that iterates
@@ -294,7 +294,7 @@ agent-loop-skills/
 
 <div align="center">
 
-### ⭐ If `while (!done) loop()` is your kind of fun, star it and [send a loop](CONTRIBUTING.md).
+### ⭐ If looping until it's better is your kind of fun, star it and [send a loop](CONTRIBUTING.md).
 
 <a href="https://star-history.com/#gaasher/agent-loop-skills&Date">
   <img src="https://api.star-history.com/svg?repos=gaasher/agent-loop-skills&type=Date" width="600" alt="Star History">
