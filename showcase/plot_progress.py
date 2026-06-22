@@ -70,14 +70,23 @@ def chart(tsv, ycol, status_col, desccol, title_name, ylabel, out):
     ax.step(kept_x, running_max, where="post", color="#27ae60",
             linewidth=2, alpha=0.7, zorder=3, label="Running best")
 
-    # label each kept experiment with its description
-    for i in kept_all:
+    # label each kept experiment with its description. The last two kept points
+    # sit high on the climb, so their labels read *downward* into the open area
+    # below the frontier instead of spilling off the top edge; the rest go up.
+    labels = []
+    n_pts = len(kept_all)
+    for j, i in enumerate(kept_all):
         d = re.sub(r"^iter\d+-a\d+:\s*", "", desc[i]).strip()
         if len(d) > 45:
             d = d[:42] + "..."
-        ax.annotate(d, (xs[i], ys[i]), textcoords="offset points",
-                    xytext=(6, 6), fontsize=8.0, color="#1a7a3a", alpha=0.9,
-                    rotation=60, ha="left", va="bottom")
+        if j >= n_pts - 2:  # last two: annotate downward
+            labels.append(ax.annotate(d, (xs[i], ys[i]), textcoords="offset points",
+                                      xytext=(6, -6), fontsize=8.0, color="#1a7a3a", alpha=0.9,
+                                      rotation=-60, ha="left", va="top"))
+        else:               # the rest: annotate upward (Karpathy's schema)
+            labels.append(ax.annotate(d, (xs[i], ys[i]), textcoords="offset points",
+                                      xytext=(6, 6), fontsize=8.0, color="#1a7a3a", alpha=0.9,
+                                      rotation=60, ha="left", va="bottom"))
 
     n_total = len(xs)
     n_kept = sum(1 for s in st if s == "KEEP")
@@ -88,10 +97,12 @@ def chart(tsv, ycol, status_col, desccol, title_name, ylabel, out):
     ax.grid(True, alpha=0.2)
     ax.set_xticks(xs)
 
-    # y-axis: from just below baseline to just above best
+    # y-axis: headroom above for the upward labels, room below for the two
+    # downward ones (Karpathy used a symmetric 0.15 margin; the steep rotated
+    # labels need a little more on each side).
     best = max(kept_y)
-    margin = (best - baseline) * 0.15
-    ax.set_ylim(baseline - margin, best + margin)
+    rng = best - baseline
+    ax.set_ylim(baseline - 0.42 * rng, best + 0.50 * rng)
 
     plt.tight_layout()
     dest = os.path.join(ROOT, "assets", out)
