@@ -50,10 +50,10 @@ If a plain `owner/repo` scan misses our `loops/` layout, point it explicitly:
 `npx skills add gaasher/agent-loop-skills/tree/main/loops`.
 
 **Manual** (the open-standard dirs):
-```bash
 git clone https://github.com/gaasher/agent-loop-skills
-cp -r agent-loop-skills/loops/* ~/.agents/skills/    # cross-tool dir: Codex, Cursor, Pi, OpenClaw, …
-cp -r agent-loop-skills/loops/* ~/.claude/skills/    # Claude Code reads this one
+# Choose ONE destination, depending on your host:
+cp -r agent-loop-skills/loops/* ~/.agents/skills/    # most open-standard hosts (Codex, Cursor, Pi, OpenClaw, …)
+cp -r agent-loop-skills/loops/* ~/.claude/skills/    # Claude Code
 # Hermes: hermes skills tap add gaasher/agent-loop-skills
 ```
 
