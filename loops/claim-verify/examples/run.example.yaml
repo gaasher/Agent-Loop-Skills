@@ -1,0 +1,9 @@
+# Example config for the claim-verify loop.
+# Copy/fill this in as loop.run.yaml in your working directory (see SKILL.md, Setup).
+
+draft: ./results_draft.md     # the results/claims document to verify (markdown/text)
+dataset: ./trial_data.csv     # read-only ground truth the claims were drawn from
+analysis_cmd: python3         # interpreter for check snippets; stdlib csv/statistics preferred
+report: ./sandbox/verified.md # the verified/revised draft this loop produces
+sandbox_root: ./sandbox       # snippets + ledger live here; created if missing; no ../ escapes
+budget: 10                    # max iterations before the loop stops

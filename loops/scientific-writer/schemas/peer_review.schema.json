@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "scientific-writer/peer_review.schema.json",
+  "title": "Peer review verdict (one iteration, the summative grade)",
+  "description": "What the single fresh peer_reviewer returns each iteration. It grades the paper on the same 5 axes the judges critique, but INDEPENDENTLY — it re-derives each axis from the paper + dataset, treats the judges' critiques as hypotheses it may overturn, and verifies a sample of claims/numbers/citations itself. One file per iteration at <sandbox_root>/iter<N>/peer_review.json.",
+  "type": "object",
+  "required": ["iteration", "axes", "overall_score", "pass"],
+  "additionalProperties": false,
+  "properties": {
+    "iteration": {"type": "integer", "minimum": 1},
+    "axes": {
+      "type": "object",
+      "description": "One entry per axis. Omit 'code' entirely when no code produces plots/results (n_axes drops to 4).",
+      "required": ["figures", "scientific", "style", "formatting"],
+      "additionalProperties": false,
+      "properties": {
+        "figures":    {"$ref": "#/$defs/axis"},
+        "scientific": {"$ref": "#/$defs/axis"},
+        "style":      {"$ref": "#/$defs/axis"},
+        "formatting": {"$ref": "#/$defs/axis"},
+        "code":       {"$ref": "#/$defs/axis"}
+      }
+    },
+    "overall_score": {
+      "type": "number", "minimum": 0, "maximum": 100,
+      "description": "100 × (Σ axis scores) / (5 × n_axes). n_axes = 5, or 4 when 'code' is absent. Equal weight, no per-axis weighting."
+    },
+    "pass": {
+      "type": "boolean",
+      "description": "overall_score >= <pass_threshold> AND gate_failures is empty."
+    },
+    "gate_failures": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Confirmed hard-gate violations that force pass=false regardless of overall_score: code that contradicts a stated result, a fabricated/incorrect citation, or a figure whose numbers != the text. The reviewer must independently confirm each before listing it."
+    },
+    "issues_judges_missed": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Real problems the reviewer found that none of the 5 judges raised. Required evidence of independent reading; an empty array is allowed only if the reviewer genuinely found none after looking."
+    },
+    "spotchecks": {
+      "type": "array",
+      "description": "Independent verifications the reviewer performed this round (NOT trusting that a 'fixed' item was fixed).",
+      "items": {
+        "type": "object",
+        "required": ["target", "method", "result"],
+        "additionalProperties": false,
+        "properties": {
+          "target": {"type": "string", "description": "What was checked, e.g. 'Table 1 mean = dataset col B mean' or 'citation [12] supports the claim it is attached to'."},
+          "method": {"type": "string", "description": "How, e.g. 'recomputed from data/results.csv', 'lit_search snippet on [12]'."},
+          "result": {"type": "string", "enum": ["confirmed", "refuted", "inconclusive"]}
+        }
+      }
+    },
+    "substance_check": {
+      "type": ["string", "null"],
+      "description": "Goodhart guard: did this iteration's revisions add real substance, or only surface compliance (padded prose, cosmetic figure tweaks that don't fix the message)? Brief judgment."
+    }
+  },
+  "$defs": {
+    "axis": {
+      "type": "object",
+      "required": ["score", "justification"],
+      "additionalProperties": false,
+      "properties": {
+        "score": {"type": "integer", "minimum": 1, "maximum": 5,
+          "description": "Anchored 1-5 (see roles/peer_reviewer.md). 5 = publishable-quality on this axis; 1 = severely deficient."},
+        "justification": {"type": "string", "description": "Why this score, grounded in specifics — the reviewer's own assessment, not a restatement of the judge."},
+        "evidence": {"type": "array", "items": {"type": "string"},
+          "description": "file:line, figure path, quoted number, or citation the score rests on."},
+        "blocking_issues": {"type": "array", "items": {"type": "string"},
+          "description": "Any confirmed block-level defects on this axis (also surfaced in gate_failures)."}
+      }
+    }
+  }
+}

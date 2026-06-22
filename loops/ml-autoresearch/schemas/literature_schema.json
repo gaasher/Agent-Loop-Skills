@@ -1,0 +1,138 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "ml-autoresearch/schemas/literature_schema.json",
+  "title": "Literature review result (ranked recipe table)",
+  "description": "The structured contract a research subagent returns to the orchestrator (literature=on only). Each finding is one actionable recipe extracted from the literature, graded for evidence and applicability, with a keep/reject verdict. The orchestrator ranks these, applies the evidence gate, and turns the keepers into the next hypothesis + verification todos.",
+  "type": "object",
+  "required": ["iteration", "findings"],
+  "additionalProperties": false,
+  "properties": {
+    "iteration": {
+      "type": "integer",
+      "description": "The loop iteration this review was produced for."
+    },
+    "research_scale": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "x-high"],
+      "description": "Depth tier used for this review."
+    },
+    "questions_asked": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "The Level-1 and Level-2 questions this review set out to answer."
+    },
+    "findings": {
+      "type": "array",
+      "description": "Ranked best-first. Empty array is valid (means: no compelling evidence found).",
+      "items": {"$ref": "#/$defs/finding"}
+    },
+    "summary": {
+      "type": "string",
+      "description": "One-paragraph synthesis: the highest-value levers and what to try next."
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "required": ["question", "abstraction_level", "claim", "evidence", "citations", "proposed_change", "verdict"],
+      "additionalProperties": false,
+      "properties": {
+        "question": {
+          "type": "string",
+          "description": "The specific question this finding answers."
+        },
+        "abstraction_level": {
+          "type": "integer",
+          "enum": [1, 2],
+          "description": "1 = high-level (architecture fit, prior approaches, does the literature show success). 2 = specific (init scheme, weight-decay dynamics, attention/cache choice, etc.)."
+        },
+        "claim": {
+          "type": "string",
+          "description": "The concrete claim the literature supports, in one or two sentences."
+        },
+        "recipe": {
+          "type": "object",
+          "description": "The actionable configuration to implement, with exact values where the source gives them. Omit fields the source does not specify.",
+          "additionalProperties": true,
+          "properties": {
+            "method": {"type": "string", "description": "Named technique / architectural change."},
+            "optimizer": {"type": "string"},
+            "learning_rate": {"type": "string"},
+            "lr_schedule": {"type": "string"},
+            "weight_decay": {"type": "string"},
+            "batch_size": {"type": "string"},
+            "initialization": {"type": "string"},
+            "regularization": {"type": "string"},
+            "other_hparams": {
+              "type": "object",
+              "additionalProperties": true,
+              "description": "Any other exact settings reported (warmup steps, dropout, etc.)."
+            }
+          }
+        },
+        "evidence": {
+          "type": "object",
+          "required": ["strength"],
+          "additionalProperties": false,
+          "properties": {
+            "strength": {
+              "type": "string",
+              "enum": ["strong", "moderate", "weak"],
+              "description": "strong = multiple papers agree and/or a clean ablation isolates the gain; moderate = one solid source with results; weak = suggestive, no ablation."
+            },
+            "n_papers_agree": {"type": "integer", "minimum": 0},
+            "has_ablation": {"type": "boolean", "description": "Does a cited source ablate this change in isolation?"},
+            "reported_gain": {"type": "string", "description": "The improvement the source reports (e.g. '+2.1 top-1 on ImageNet')."}
+          }
+        },
+        "citations": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Sources backing the claim. At least one required — a finding with no citation is not grounded.",
+          "items": {"$ref": "#/$defs/citation"}
+        },
+        "applicability_to_our_setup": {
+          "type": "string",
+          "description": "Why this transfers to THIS data/model/budget — including cross-domain reasoning if the source is from another field. Note any mismatch (scale, data size, modality)."
+        },
+        "proposed_change": {
+          "type": "string",
+          "description": "The concrete edit to make next iteration, phrased so the orchestrator can act on it directly."
+        },
+        "files_to_edit": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Which editable files the change would touch (must be within the loop's editable set)."
+        },
+        "how_to_verify": {
+          "type": "string",
+          "description": "The metric/log/analysis to add or watch next run to tell whether this change actually helped. Becomes a verification todo."
+        },
+        "verdict": {
+          "type": "string",
+          "enum": ["keep", "reject"],
+          "description": "Whether this passes the evidence gate and should be implemented."
+        },
+        "verdict_reason": {
+          "type": "string",
+          "description": "Why keep or reject (evidence strength x applicability x implementability)."
+        }
+      }
+    },
+    "citation": {
+      "type": "object",
+      "required": ["title"],
+      "additionalProperties": false,
+      "properties": {
+        "title": {"type": "string"},
+        "arxiv_id": {"type": ["string", "null"]},
+        "doi": {"type": ["string", "null"]},
+        "year": {"type": ["integer", "null"]},
+        "venue": {"type": ["string", "null"]},
+        "influential_citations": {"type": ["integer", "null"]},
+        "url": {"type": ["string", "null"]},
+        "snippet": {"type": ["string", "null"], "description": "The exact passage/section supporting the claim, if read."}
+      }
+    }
+  }
+}

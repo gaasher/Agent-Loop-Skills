@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "tournament-autoresearch/verdict.schema.json",
+  "title": "Judge verdict (on one idea)",
+  "description": "What the Judge records for a single idea, referenced by id. `scores` are the learning signal (recorded for calibration, NOT used to rank); `rank`/`decision` are the outcome, set by de-biased pairwise. One verdict per idea under <sandbox_root>/iter<N>/verdicts/.",
+  "type": "object",
+  "required": ["idea_id", "scores", "rank", "decision"],
+  "additionalProperties": false,
+  "properties": {
+    "idea_id": {"type": "string", "description": "The id of the idea this verdict scores."},
+    "scores": {
+      "type": "object",
+      "description": "Anchored 0-5 per axis (see rubrics/rubric.md).",
+      "required": ["grounding", "impact", "feasibility"],
+      "additionalProperties": false,
+      "properties": {
+        "grounding": {"type": "integer", "minimum": 0, "maximum": 5},
+        "impact": {"type": "integer", "minimum": 0, "maximum": 5},
+        "feasibility": {"type": "integer", "minimum": 0, "maximum": 5}
+      }
+    },
+    "rank": {"type": "integer", "minimum": 1, "description": "1 = selected."},
+    "decision": {"type": "string", "enum": ["select", "reject"]},
+    "critique": {"type": ["string", "null"], "description": "Short critique sent back to the agent."}
+  }
+}

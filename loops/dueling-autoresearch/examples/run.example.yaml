@@ -1,0 +1,31 @@
+# Example config for the dueling-autoresearch loop.
+# Copy/fill this in as loop.run.yaml in your working directory (see SKILL.md, Setup).
+
+# --- shared bindings (identical for both lanes — the honesty anchor) ---------
+metric: val_acc
+metric_direction: maximize    # minimize or maximize
+gate: epochs                  # epochs or time
+budget: 5                     # epochs per run (or minutes if gate: time)
+sandbox_root: ./sandbox       # snapshots, ledgers, and duel_log.md live here
+iter_strategy: snapshots      # snapshots or branches (codebase lanes only)
+
+# --- the two lanes ----------------------------------------------------------
+# Each lane has a code_location:
+#   codebase = edits existing repo files (editable_files) and runs an existing entrypoint (run_cmd).
+#   sandbox  = authors + runs its own code inside <sandbox_root>/<lane>/iter<N>/ via entry
+#              (nothing is added to the repo).
+lanes:
+  - name: learned             # the ML / learned lane — backed by the existing codebase
+    code_location: codebase
+    run_cmd: "/path/to/venv/bin/python train.py"
+    editable_files:
+      - model.py
+      - config.yaml
+
+  - name: classical           # the algorithmic lane — built entirely in the sandbox
+    code_location: sandbox
+    entry: "python run.py"    # run from inside <sandbox_root>/classical/iter<N>/
+    # no run_cmd / editable_files: the code is authored under <sandbox_root>/classical/iter<N>/
+
+# Both lanes MUST report `metric` on the same held-out set, computed the same way,
+# so the head-to-head scoreboard is meaningful (the eval-parity gate).

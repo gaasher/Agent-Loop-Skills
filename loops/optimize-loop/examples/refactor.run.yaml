@@ -1,0 +1,23 @@
+# Example loop.run.yaml for optimize-loop in CODE mode (refactor under test).
+# Copy this to loop.run.yaml in your working directory and fill in the paths (see SKILL.md §Setup).
+#
+# CODE mode binds:
+#   - the correctness gate to a TEST COMMAND that must exit 0, and
+#   - the metric to tools/metrics.py, which prints {complexity, max_nesting, loc, ...};
+#     the loop minimizes `complexity` (primary), then `max_nesting`, then `loc` (lexicographic).
+
+mode: code                              # code | sql  — selects which gate + metric apply
+
+# --- artifact: only these files may be edited; everything else is read-only ground truth ---
+editable_files: [code/messy_stats.py]
+
+# --- correctness gate (must PASS, else revert): the test suite stays green -----------------
+gate_cmd: "python3 -m unittest"         # hard gate — must exit 0 (e.g. pytest -q, npm test)
+
+# --- metric (minimize): tools/metrics.py prints a JSON number to minimize -------------------
+# <skill_dir> is this skill's installed folder; substitute the real path when you write the file.
+metric_cmd: "python3 <skill_dir>/tools/metrics.py code/messy_stats.py"
+
+sandbox_root: ./sandbox                 # snapshots + ledger live here
+budget: 8                               # max iterations (hard cap)
+patience: 3                             # stop after N consecutive no-improvement iterations

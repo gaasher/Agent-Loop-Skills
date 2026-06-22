@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tabular-cleanup/profile.schema.json",
+  "title": "ChecklistProfile",
+  "description": "Deterministic per-version profile written to profiles/profile-v<N>.json each time a dataset version is scored. The objective is a checklist of binary checks: each check reports a violation COUNT and a state. There is no weighted composite score; checks_passing_pct is a reporting headline only and never drives control flow.",
+  "type": "object",
+  "required": ["version", "rows", "cols", "checks", "checks_total", "checks_passing", "checks_passing_pct", "total_violations", "retention", "columns", "summary"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "string", "description": "Version id, e.g. 'v3'." },
+    "rows": { "type": "integer", "minimum": 0 },
+    "cols": { "type": "integer", "minimum": 0 },
+    "checks_total": { "type": "integer", "minimum": 0 },
+    "checks_passing": { "type": "integer", "minimum": 0, "description": "Number of checks in state 'pass'." },
+    "checks_passing_pct": { "type": "number", "minimum": 0, "maximum": 1, "description": "checks_passing / checks_total. Reporting headline ONLY — does not drive keep/revert." },
+    "total_violations": { "type": "integer", "minimum": 0, "description": "Sum of violations across all checks." },
+    "retention": {
+      "type": "number", "minimum": 0, "maximum": 1,
+      "description": "unique_rows_kept / unique_rows_in_v0 (denominator is v0 deduplicated; cumulative)."
+    },
+    "checks": {
+      "type": "array",
+      "description": "The compiled checklist with current state. One entry per check.",
+      "items": {
+        "type": "object",
+        "required": ["id", "dimension", "scope", "severity", "violations", "state"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "description": "Check id, e.g. 'age.range', 'rows.unique', 'signup_le_lastseen'." },
+          "dimension": {
+            "type": "string",
+            "description": "DAMA/ISO-25012 grouping for reporting only.",
+            "enum": ["completeness", "validity", "consistency", "uniqueness", "plausibility"]
+          },
+          "scope": { "type": "string", "description": "Column name, list of columns, or 'rows' for whole-row checks." },
+          "severity": { "type": "string", "enum": ["high", "normal"], "description": "Priority tier; keys/required default to high." },
+          "violations": { "type": "integer", "minimum": 0, "description": "Count of violating cells or rows." },
+          "state": {
+            "type": "string",
+            "enum": ["pass", "open", "residual"],
+            "description": "pass = 0 violations; open = fixable violations remain; residual = violations remain but unfixable within guardrails."
+          }
+        }
+      }
+    },
+    "columns": {
+      "type": "array",
+      "description": "Lightweight per-column stats that aid diagnosis (not themselves the checks).",
+      "items": {
+        "type": "object",
+        "required": ["name", "dtype", "contract_dtype", "pct_null", "n_unique"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "dtype": { "type": "string", "description": "Observed pandas dtype." },
+          "contract_dtype": { "type": "string", "description": "Dtype the contract expects." },
+          "pct_null": { "type": "number", "minimum": 0, "maximum": 1 },
+          "n_unique": { "type": "integer", "minimum": 0 },
+          "variant_clusters": {
+            "type": "array",
+            "description": "Suspected categorical variants that should fold to one canonical value.",
+            "items": {
+              "type": "object",
+              "required": ["canonical", "variants"],
+              "additionalProperties": false,
+              "properties": {
+                "canonical": { "type": "string" },
+                "variants": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "summary": { "type": "string", "description": "4-8 line human-readable profile summary." }
+  }
+}

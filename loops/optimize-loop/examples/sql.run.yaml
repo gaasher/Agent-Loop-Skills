@@ -1,0 +1,30 @@
+# Example loop.run.yaml for optimize-loop in SQL mode (speed up a query, preserve results).
+# Copy this to loop.run.yaml in your working directory and fill in the paths (see SKILL.md §Setup).
+#
+# SQL mode binds:
+#   - the correctness gate to the result-set HASH from tools/bench.py: a candidate's `hash`
+#     must equal the baseline `hash` (same rows), else revert, and
+#   - the metric to tools/bench.py's `median_ms`, which the loop minimizes.
+# tools/bench.py runs the query against a THROWAWAY COPY of the db, so index DDL in
+# indexes_file never mutates the seed database.
+
+mode: sql                               # code | sql  — selects which gate + metric apply
+
+# --- artifact: only these files may be edited; the db and bench.py are read-only -----------
+query_file: ./query.sql                 # the query to optimize (primary artifact)
+indexes_file: ./indexes.sql             # optional DDL the loop may add to; omit for query-only tuning
+
+# --- db: read-only ground truth -----------------------------------------------------------
+db: ./test.db
+
+# --- correctness gate + metric come from ONE bench command --------------------------------
+# bench.py prints {"median_ms", "min_ms", "rows", "hash"}.
+#   gate  = candidate `hash` == baseline `hash`  (same result-set; revert if it differs)
+#   metric = `median_ms`                          (minimized; keep only on a >= ~3% drop)
+# <skill_dir> is this skill's installed folder; substitute the real path when you write the file.
+# Drop "--setup ./indexes.sql" if you are not using an indexes_file.
+metric_cmd: "python3 <skill_dir>/tools/bench.py --db ./test.db --query ./query.sql --setup ./indexes.sql --repeat 5"
+
+sandbox_root: ./sandbox                 # snapshots + ledger live here
+budget: 8                               # max iterations (hard cap)
+patience: 3                             # stop after N consecutive no-improvement iterations
