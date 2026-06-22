@@ -164,7 +164,7 @@ scripts are more reliable, save tokens, and stay consistent across runs.
 Multi-role loops (judge / critic / mutator / reviser) keep each role prompt in `roles/`, self-contained
 and generic (named bindings, no hardcoded values). **Spawn-or-degrade**: spawn a real isolated
 subagent where the host supports it, otherwise adopt the role inline in the same context. Runtime
-dispatch of an arbitrary role file is **confirmed only on Claude Code** (the `Agent`/Task tool); on other
+dispatch of an arbitrary role file is **confirmed only on Claude Code** (the `Agent` / `Task` tool); on other
 hosts the role runs inline — so never assume real isolation off Claude Code. Detect the host once (is
 `AskUserQuestion` available?) and branch. Launch
 independent subagents **in one turn** for parallelism; require a structured return (validate against
