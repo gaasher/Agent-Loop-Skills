@@ -16,6 +16,9 @@ metadata:
 
 # Alpha-Evolve
 
+> Reference (read if you need the algorithm's details): AlphaEvolve — https://arxiv.org/abs/2506.13131 ·
+> OpenEvolve (open-source impl) — https://github.com/algorithmicsuperintelligence/openevolve
+
 A **population-based evolutionary** loop over a program. The artifact is the editable model code; a
 **child** is one analysis-informed **SEARCH/REPLACE diff** to a parent, and the feedback signal is a
 **cascade-evaluated training run** (`<metric>`, smoke→full). Children are placed in a **MAP-Elites
