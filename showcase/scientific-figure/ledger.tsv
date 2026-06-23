@@ -1,0 +1,3 @@
+iter	overall_score	pass	message	aesthetic	clarity	integrity	domain	top_fix	generation_summary
+1	80.0	no	5	4	4	4	3	fix GoogLeNet "as reported in original paper" contradiction (value is from Inception-v3 paper)	lit-verified draft; full 0-100 axis; per-bar labels + arXiv source footnote
+2	96.0	yes	5	4	5	5	5	-	GoogLeNet* asterisk + sourcing footnote; colorblind-safe Blues; 9pt caption; 2-decimal labels

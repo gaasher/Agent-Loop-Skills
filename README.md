@@ -138,6 +138,7 @@ plausible-but-wrong claim once it spotted a mobile confound. → [`showcase/data
 |---|---|
 | [`optimize-loop`](showcase/optimize-loop) | Correctness-gated speedup: a SQLite query **1,131.75 ms → 1.055 ms (~1,073×)**, result-set hash matching baseline on **every kept iteration**; in *code* mode cut cyclomatic complexity **23 → 15** (nesting 7 → 3) with **13/13 tests green**. |
 | [`research-proposal`](showcase/research-proposal) | ScholarEval graded a proposal against the literature; Judge + Reviser iterated **grade 45 → 84** (soundness 2→4, contribution 1→4) over 5 rounds. |
+| [`scientific-figure`](showcase/scientific-figure) | Same ImageNet top-1-accuracy bar-chart brief, with vs without the loop: a single call truncated the y-axis at 50% and used non-paper numbers; the loop verified every value against the arXiv papers, flagged GoogLeNet's borrowed top-1, and iterated **80 → 96 (PASS)**. |
 | [`red-team`](showcase/red-team) | Against a naive content filter, surfaced **all 5 planted weaknesses** (case bypass, leetspeak, spacing, synonyms, over-block) — 39 bypasses + 6 over-blocks — with a one-line root-cause fix each. |
 | [`power-analysis`](showcase/power-analysis) | Solved **n = 100/group for 80% power** via Monte-Carlo, fixed all 6 validity flaws, and emitted a full pre-registration. |
 | [`research-question`](loops/research-question) | Sharpened 5 vague drafts → 3 strong questions (≥75), with real web novelty checks pivoting already-answered questions toward the open sub-problem. |
@@ -175,6 +176,7 @@ plausible-but-wrong claim once it spotted a mobile confound. → [`showcase/data
 | [`hypothesis-gen`](loops/hypothesis-gen) † | Generates and literature-vets a pool of research hypotheses. |
 | [`research-proposal`](loops/research-proposal) † | Grades a proposal against the literature (ScholarEval) and revises until it passes. |
 | [`scientific-writer`](loops/scientific-writer) † | Specialist judges + an independent peer-reviewer critique a draft; a writer revises until the score clears a bar. |
+| [`scientific-figure`](loops/scientific-figure) † | A generator drafts a publication figure from your data/brief; an adversarial critic grades it against a fixed rubric — both can consult the literature (S2/arXiv) — and the two iterate until it's paper-ready. |
 
 **Data**
 

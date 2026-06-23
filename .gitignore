@@ -38,3 +38,4 @@ mlruns/
 .idea/
 .vscode/
 *.swp
+/.scifig-run/

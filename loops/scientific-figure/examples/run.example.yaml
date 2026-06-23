@@ -1,0 +1,39 @@
+# Example bindings for the scientific-figure loop (the bindings table in SKILL.md documents each).
+# At setup the loop writes a filled-in copy to <sandbox_root>/loop.run.yaml. Paths point at your
+# ORIGINALS; the loop copies the data into the sandbox read-only and never edits the originals.
+
+# --- the figure brief + its data ---------------------------------------------
+brief: >
+  A bar chart of mean protein expression by experimental group (control vs. treated), with error bars,
+  for the MAPK signalling pathway readout. Message: the treated group shows up-regulation across the
+  cascade. Audience: cell-biology reviewers.
+data_paths:                           # data file(s) the figure visualizes; [] -> illustrative/schematic
+  - ./data/levels.csv
+render_cmd: "python3"                 # interpreter that runs the generator's iter<N>/plot.py, in YOUR env
+                                      # (e.g. "uv run python" or "/path/to/.venv/bin/python")
+
+# The figure's communication objective(s), distilled from `brief` at setup and FROZEN.
+# The generator may make the message prettier/clearer but may never change it (anti-gaming anchor).
+goals: >
+  Show that the treated group is up-regulated relative to control across the MAPK cascade, honestly
+  (real means + uncertainty), in a single colorblind-safe figure graspable at a glance.
+
+# --- style / venue (optional) ------------------------------------------------
+style: Nature                         # aesthetic guide OR a journal/venue name; a journal -> its figure
+                                      # spec is fetched to <sandbox_root>/style/journal_spec.md at setup.
+                                      # null/omit for no specific style.
+
+# --- the passing bar ---------------------------------------------------------
+pass_threshold: 85                    # 0-100 overall_score the critic must reach (and no hard gate)
+budget: 6                             # max iterations
+patience: 2                           # stop after this many iterations with no overall_score improvement
+
+# --- plumbing ----------------------------------------------------------------
+sandbox_root: ./sandbox
+# Literature toolchain (optional): the sibling `literature-search` skill, S2 + arXiv core ONLY.
+lit_skill_dir: ~/.claude/skills/literature-search
+lit_py: python3                       # any Python >=3.9 for the stdlib-only tools/lit_search.py
+
+# Literature key presence (booleans only) — persisted at setup; values live in keys.env at the project root.
+literature_tiers:
+  S2_API_KEY: false                   # free, recommended (makes snippet/cite reliable for domain checks)

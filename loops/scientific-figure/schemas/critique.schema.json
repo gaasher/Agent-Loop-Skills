@@ -1,0 +1,94 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "scientific-figure/critique.schema.json",
+  "title": "Figure critique + grade (one critic, one iteration)",
+  "description": "What the fresh critic returns each iteration: an independent 1-5 grade per rubric axis, an aggregated 0-100 score, the pass decision with hard gates, plus executable findings the generator addresses next. The critic re-derives each axis from the rendered figure + data + frozen <goals> and spot-checks numbers itself; it does not trust that a 'fixed' item was fixed. One file per iteration at <sandbox_root>/iter<N>/critique.json.",
+  "type": "object",
+  "required": ["iteration", "summary", "axes", "overall_score", "pass", "findings"],
+  "additionalProperties": false,
+  "properties": {
+    "iteration": {"type": "integer", "minimum": 1},
+    "summary": {"type": "string", "description": "1-2 sentences. Lead with the verdict."},
+    "axes": {
+      "type": "object",
+      "description": "One entry per active axis. Omit 'domain' entirely when the figure makes no external domain claim (n_axes drops to 4).",
+      "required": ["message", "aesthetic", "clarity", "integrity"],
+      "additionalProperties": false,
+      "properties": {
+        "message":   {"$ref": "#/$defs/axis"},
+        "aesthetic": {"$ref": "#/$defs/axis"},
+        "clarity":   {"$ref": "#/$defs/axis"},
+        "integrity": {"$ref": "#/$defs/axis"},
+        "domain":    {"$ref": "#/$defs/axis"}
+      }
+    },
+    "overall_score": {
+      "type": "number", "minimum": 0, "maximum": 100,
+      "description": "100 × (Σ axis scores) / (5 × n_axes). n_axes = 5, or 4 when 'domain' is absent. Equal weight, no per-axis weighting."
+    },
+    "pass": {
+      "type": "boolean",
+      "description": "overall_score >= <pass_threshold> AND gate_failures is empty."
+    },
+    "gate_failures": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Confirmed hard-gate violations that force pass=false regardless of overall_score: a figure value that contradicts the data, a misleading axis (truncated/dual/hidden-log), or fabricated data presented as real. The critic must independently confirm each before listing it."
+    },
+    "spotchecks": {
+      "type": "array",
+      "description": "Independent verifications the critic performed this round (NOT trusting that a 'fixed' item was fixed).",
+      "items": {
+        "type": "object",
+        "required": ["target", "method", "result"],
+        "additionalProperties": false,
+        "properties": {
+          "target": {"type": "string", "description": "What was checked, e.g. 'group-B bar height = 2.4' or 'MAPK panel includes ERK/MEK'."},
+          "method": {"type": "string", "description": "How, e.g. 'recomputed from data/levels.csv', 'lit snippet: KEGG MAPK members'."},
+          "result": {"type": "string", "enum": ["confirmed", "refuted", "inconclusive"]}
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "description": "Executable fixes for the generator, highest-leverage first (block/gate items first). The generator optimizes against these; the grade is re-derived independently each round, so addressing every finding does not mechanically buy a pass.",
+      "items": {
+        "type": "object",
+        "required": ["urgency", "action_type", "area", "finding", "proposed_action", "target_artifact", "evidence"],
+        "additionalProperties": false,
+        "properties": {
+          "urgency": {
+            "type": "string",
+            "enum": ["must_fix", "should_fix", "nice_to_have", "observation"]
+          },
+          "action_type": {
+            "type": "string",
+            "enum": ["add", "remove", "replace", "tighten"]
+          },
+          "area": {"type": "string", "description": "Short tag, e.g. 'axes:unlabeled' or 'palette:not-colorblind-safe' or 'domain:incomplete'."},
+          "finding": {"type": "string", "description": "What is wrong, missing, or excess. Be specific; cite the number or figure element."},
+          "proposed_action": {"type": "string", "description": "Concrete next step. Make it executable."},
+          "target_artifact": {"type": "string", "description": "The sandbox file the action would touch, e.g. iter2/plot.py."},
+          "evidence": {"type": "string", "description": "data row, figure element, quoted number, or lit snippet that grounds the finding."}
+        }
+      }
+    },
+    "rationale": {"type": ["string", "null"], "description": "Brief chain-of-thought justifying the grade. Filled AFTER the scores (not score-first-rationalize-after)."}
+  },
+  "$defs": {
+    "axis": {
+      "type": "object",
+      "required": ["score", "justification"],
+      "additionalProperties": false,
+      "properties": {
+        "score": {"type": "integer", "minimum": 1, "maximum": 5,
+          "description": "Anchored 1-5 (see rubrics/rubric.md). 5 = publication-quality on this axis; 1 = severely deficient."},
+        "justification": {"type": "string", "description": "Why this score, grounded in specifics — the critic's own assessment."},
+        "evidence": {"type": "array", "items": {"type": "string"},
+          "description": "figure element, data value, journal-spec line, or lit snippet the score rests on."},
+        "blocking_issues": {"type": "array", "items": {"type": "string"},
+          "description": "Any confirmed block-level defects on this axis (also surfaced in gate_failures)."}
+      }
+    }
+  }
+}
