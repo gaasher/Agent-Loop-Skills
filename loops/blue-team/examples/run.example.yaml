@@ -1,0 +1,31 @@
+# Example config for the blue-team loop — ORACLE mode (failed cases from red-team).
+# Copy/fill this in as loop.run.yaml in your working directory (see SKILL.md "Setup").
+# See tests.run.yaml for TESTS mode (failed cases from CI/CD).
+
+source: oracle                 # oracle (red-team failures) | tests (CI/CD failures)
+
+# The file(s) the loop may edit to fix the target. Everything else is frozen ground truth.
+target_files:
+  - guardrail.py
+
+# The failed cases to close. Build it from red-team's failures.jsonl with tools/ingest.py:
+#   python3 <skill_dir>/tools/ingest.py --from red-team --in ./sandbox/failures.jsonl --out ./sandbox/catalogue.jsonl
+catalogue: ./sandbox/catalogue.jsonl
+
+# Ground-truth verdict for an input (frozen): reads stdin, prints the correct verdict.
+oracle_cmd: "python3 ./policy_oracle.py"
+
+# Benign + clearly-correct inputs that must keep passing — the regression guard: {id, text}.
+holdout: ./sandbox/holdout.jsonl
+
+iter_strategy: branches        # branches (commit per fix → PR) or snapshots (dirty/non-git trees)
+pr_branch: blue-team/jun28     # branch the fixes land on and the PR opens from
+
+sandbox_root: ./sandbox        # snapshots + ledger live here
+budget: 8                      # max iterations
+patience: 3                    # give up on one class after N attempts → mark it a residual
+
+# The signal each iteration (<skill_dir> is where this skill is installed, e.g. ~/.claude/skills/blue-team):
+#   python3 <skill_dir>/tools/verify.py --target "python3 ./guardrail.py" \
+#     --oracle "python3 ./policy_oracle.py" --catalogue ./sandbox/catalogue.jsonl \
+#     --holdout ./sandbox/holdout.jsonl
