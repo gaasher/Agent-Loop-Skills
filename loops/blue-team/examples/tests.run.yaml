@@ -1,0 +1,29 @@
+# Example config for the blue-team loop — TESTS mode (failed cases from CI/CD).
+# Copy/fill this in as loop.run.yaml in your working directory (see SKILL.md "Setup").
+
+source: tests                  # oracle (red-team failures) | tests (CI/CD failures)
+
+# The source file(s) the loop may edit to make the failing tests pass. The test suite is frozen.
+target_files:
+  - src/textkit.py
+
+# The failed cases to close — the failing tests. Build it from a JUnit report with tools/ingest.py:
+#   pytest --junitxml=./sandbox/junit.xml            # produce the report (any runner that emits JUnit)
+#   python3 <skill_dir>/tools/ingest.py --from junit --in ./sandbox/junit.xml --out ./sandbox/catalogue.jsonl
+catalogue: ./sandbox/catalogue.jsonl
+
+# Runs the suite and writes a fresh JUnit XML; verify.py reads pass/fail from it (and flags any
+# previously-passing test the fix breaks as a regression — that is the gate, no separate holdout needed).
+test_cmd: "pytest -q --junitxml=./sandbox/junit.xml"
+junit: ./sandbox/junit.xml
+
+iter_strategy: branches        # branches (commit per fix → PR) or snapshots
+pr_branch: blue-team/jun28
+
+sandbox_root: ./sandbox
+budget: 10
+patience: 3
+
+# The signal each iteration:
+#   python3 <skill_dir>/tools/verify.py --test-cmd "pytest -q --junitxml=./sandbox/junit.xml" \
+#     --junit ./sandbox/junit.xml --catalogue ./sandbox/catalogue.jsonl

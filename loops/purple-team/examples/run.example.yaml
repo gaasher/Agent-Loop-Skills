@@ -1,0 +1,25 @@
+# Example config for the purple-team loop (orchestrates red-team + blue-team).
+# Copy/fill this in as loop.run.yaml in your working directory (see SKILL.md "Setup").
+# One shared file drives both phases: it is <target_files> to blue and the program behind
+# <target_cmd> to red; the failures path is red's output and blue's input.
+
+target_cmd: "python3 ./guardrail.py"   # the target red attacks (reads stdin, prints a verdict)
+target_files:                          # the source blue may edit to fix it
+  - guardrail.py
+oracle_cmd: "python3 ./policy_oracle.py"   # ground-truth verdict (frozen)
+gate_cmd: "python3 -m pytest -q"       # functional tests that must stay green through a fix
+holdout: ./sandbox/holdout.jsonl       # benign + clearly-correct inputs blue must not break
+
+catalogue: ./sandbox/failures.jsonl    # shared: red writes it cycle 0, blue closes it
+
+iter_strategy: branches                # branches (commit per fix → PR) or snapshots
+pr_branch: purple-team/jun28           # branch the fixes land on and the PR opens from
+
+sandbox_root: ./sandbox                # catalogues, snapshots, ledgers live here
+cycle_budget: 4                        # max find -> fix -> re-verify cycles
+find_budget: 8                         # inner budget passed to each red-team pass
+fix_budget: 8                          # inner budget passed to the blue-team pass
+
+# Phases run the sibling skills' tools:
+#   red:  python3 <red_skill_dir>/tools/harness.py  --target ... --oracle ... --inputs ... --log ...
+#   blue: python3 <blue_skill_dir>/tools/verify.py  --target ... --oracle ... --catalogue ... --holdout ...

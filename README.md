@@ -4,7 +4,7 @@
 
 ### Loop until it's better — drop-in agentic **loops**, packaged as open-standard **Agent Skills**.
 
-Autoresearch · scientific writing · data analysis · code/SQL/prompt optimization · red-teaming —
+Autoresearch · scientific writing · data analysis · code/SQL/prompt optimization · red/blue/purple-teaming —
 each a *generic, reusable loop* you bind to **your own task at invocation time**, that iterates
 against a **real signal** until the work is actually better.
 
@@ -164,7 +164,7 @@ plausible-but-wrong claim once it spotted a mobile confound. → [`showcase/data
 </details>
 
 <details>
-<summary><b>Literature & writing</b> · <b>Data</b> · <b>Code & optimization</b> · <b>Other</b> (click to expand)</summary>
+<summary><b>Literature & writing</b> · <b>Data</b> · <b>Code & optimization</b> · <b>Security</b> · <b>Other</b> (click to expand)</summary>
 
 **Literature & writing**
 
@@ -194,11 +194,18 @@ plausible-but-wrong claim once it spotted a mobile confound. → [`showcase/data
 | [`optimize-loop`](loops/optimize-loop) | Evaluator-optimizer with a pluggable correctness gate + minimized metric — refactor code (tests green + complexity↓) or speed up SQL (identical results + latency↓). |
 | [`prompt-optimize`](loops/prompt-optimize) | Evolves a prompt against a user-supplied scoring command (a black-box oracle). |
 
+**Security** — authorized testing only
+
+| Loop | Why you'd reach for it |
+|---|---|
+| [`red-team`](loops/red-team) | Adversarial loop-until-dry that surfaces distinct failure classes of a system you own. |
+| [`blue-team`](loops/blue-team) | The defensive fixer — closes a failure catalogue's classes under a regression gate, then opens a PR. |
+| [`purple-team`](loops/purple-team) † | Orchestrates red → blue → re-verify until a fresh attack pass stays dry; opens a PR with the patch set. |
+
 **Other**
 
 | Loop | Why you'd reach for it |
 |---|---|
-| [`red-team`](loops/red-team) | Adversarial loop-until-dry that surfaces distinct failure classes of a system you own (authorized testing). |
 | [`power-analysis`](loops/power-analysis) | Sizes and pre-registers a two-arm experiment to hit a target statistical power. |
 
 </details>
@@ -237,8 +244,9 @@ loops use to call `literature-search`.
 
 Loops are most useful when they're honest about what's next. PRs on any of these are very welcome:
 
-- [ ] **Blue-teaming + communication interface** — a defensive counterpart to `red-team` (find → fix →
-  re-verify) plus a clean interface for the loop to *communicate* with a paired analyst/operator.
+- [x] **Blue-teaming + communication interface** — shipped as [`blue-team`](loops/blue-team) (the
+  defensive fixer) and [`purple-team`](loops/purple-team) (find → fix → re-verify), with the pull
+  request as the communication interface to the target's owner.
 - [ ] **Per-loop `sandbox/` eval cases** committed for every loop, so anyone can reproduce a run end-to-end.
 - [ ] **Host-specific subagent adapters** (Cursor subagents, Hermes `delegate_task`) so multi-role loops get
   real isolation beyond Claude Code.
