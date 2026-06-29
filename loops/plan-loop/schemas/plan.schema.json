@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "plan-loop tasks file (tasks.json)",
+  "description": "The structured, executable output of the plan-loop: a first-principles decomposition plus PR-sized tasks ordered by dependency. tools/validate_plan.py enforces this contract and the dependency/coverage invariants on top of it.",
+  "type": "object",
+  "required": ["objective", "end_state", "environment", "components", "tasks", "order"],
+  "additionalProperties": true,
+  "properties": {
+    "objective": {"type": "string", "description": "What the user wants and why — one crisp paragraph."},
+    "end_state": {"type": "string", "description": "Definition of done: what observably exists/works when the plan is fully executed."},
+    "non_goals": {"type": "array", "items": {"type": "string"}, "description": "Explicit scope boundaries — what this plan deliberately does not do."},
+    "environment": {
+      "type": "object",
+      "required": ["language", "package_manager"],
+      "properties": {
+        "language": {"type": "string"},
+        "runtime": {"type": "string"},
+        "package_manager": {"type": "string"},
+        "os": {"type": "string"},
+        "test_command": {"type": "string", "description": "How the project's tests are run, if known."},
+        "notes": {"type": "string"}
+      }
+    },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "description": "First-principles building blocks of the work; every task must serve at least one.",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "description"],
+        "properties": {
+          "id": {"type": "string"},
+          "name": {"type": "string"},
+          "description": {"type": "string"}
+        }
+      }
+    },
+    "open_questions": {"type": "array", "items": {"type": "string"}, "description": "Unknowns/decisions the human should resolve before or during execution."},
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "description": "PR-sized units of work (target ~100-400 LOC). Each is self-contained enough for a junior engineer or a smaller model to execute correctly.",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "serves", "description", "files", "subtasks", "tests", "acceptance_criteria", "depends_on", "estimated_loc"],
+        "properties": {
+          "id": {"type": "string", "description": "Stable id, e.g. T1, T2."},
+          "title": {"type": "string"},
+          "serves": {"type": "array", "minItems": 1, "items": {"type": "string"}, "description": "component ids this task advances."},
+          "description": {"type": "string", "description": "What this task delivers and how it fits the end state."},
+          "building_blocks": {"type": "array", "items": {"type": "string"}},
+          "tools": {"type": "array", "items": {"type": "string"}},
+          "packages": {"type": "array", "items": {"type": "string"}},
+          "files": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["path", "action"],
+              "properties": {
+                "path": {"type": "string"},
+                "action": {"type": "string", "enum": ["create", "modify", "delete"]},
+                "what": {"type": "string"}
+              }
+            }
+          },
+          "subtasks": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Atomic steps a junior can do without further decomposition, e.g. 'define function parse_config(path)'.",
+            "items": {
+              "type": "object",
+              "required": ["id", "description"],
+              "properties": {
+                "id": {"type": "string"},
+                "description": {"type": "string"}
+              }
+            }
+          },
+          "tests": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["description"],
+              "properties": {
+                "description": {"type": "string"},
+                "kind": {"type": "string", "enum": ["unit", "integration", "e2e", "manual"]}
+              }
+            }
+          },
+          "acceptance_criteria": {"type": "array", "minItems": 1, "items": {"type": "string"}, "description": "Observable conditions that mean the task is done."},
+          "depends_on": {"type": "array", "items": {"type": "string"}, "description": "task ids that must complete first."},
+          "estimated_loc": {"type": "integer", "description": "Rough lines-of-code estimate; PR-sized tasks target ~100-400."},
+          "suggested_skills": {"type": "array", "items": {"type": "string"}, "description": "installed skills that could help execute this task."}
+        }
+      }
+    },
+    "order": {"type": "array", "minItems": 1, "items": {"type": "string"}, "description": "A valid topological ordering of all task ids (each task after its dependencies)."}
+  }
+}

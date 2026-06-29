@@ -1,0 +1,21 @@
+# Example config for the plan-loop.
+# Copy/fill this in as loop.run.yaml in your working directory (see SKILL.md "Setup").
+
+# The prompt to turn into a plan — a path to a file, or inline text.
+prompt: ./prompt.md
+
+# The project the plan targets. Read for ground-truth environment + conventions; never edited.
+repo: .
+
+# Outputs.
+plan_file: ./sandbox/plan.md         # human-readable layout
+tasks_file: ./sandbox/tasks.json     # structured tasks (validated against schemas/plan.schema.json)
+
+pr_loc: "100-400"                    # target lines of code per task (PR-sized; tasks may exceed)
+sandbox_root: ./sandbox              # plan, tasks, ledger live here
+budget: 5                            # max refine cycles (decompose -> validate -> critique -> revise)
+
+# The objective gate each cycle (<skill_dir> = where this skill is installed, e.g. ~/.claude/skills/plan-loop):
+#   python3 <skill_dir>/tools/validate_plan.py --tasks ./sandbox/tasks.json
+# The qualitative gate is the principal-engineer critique (roles/principal-engineer.md), validated
+# against schemas/critique.schema.json.
