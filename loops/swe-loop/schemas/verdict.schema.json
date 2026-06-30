@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "swe-loop/verdict.schema.json",
+  "title": "QA verdict on one task iteration",
+  "description": "What the QA subagent returns after authoring/confirming tests, running them, and grading code quality for the current task. `pass` is the keep gate: tests green (the task's own tests AND the full regression suite) AND quality_pass AND no gate_failures. QA edits only test files — never source — so author and critic have disjoint write scopes.",
+  "type": "object",
+  "required": ["task_id", "iteration", "tests", "quality", "quality_pass", "pass"],
+  "additionalProperties": false,
+  "properties": {
+    "task_id": {"type": "string"},
+    "iteration": {"type": "integer", "minimum": 1},
+    "tests_authored": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Test files QA created or strengthened this iteration. Empty when the task's acceptance_criteria are already covered by existing tests (QA then grades quality only). Tests are strengthen-only: QA never weakens or deletes a passing test to make a change pass."
+    },
+    "tests": {
+      "type": "object",
+      "required": ["command", "total", "passed", "failed", "regression_green"],
+      "additionalProperties": false,
+      "properties": {
+        "command": {"type": "string", "description": "The test command run (from <test_command>)."},
+        "total": {"type": "integer", "minimum": 0},
+        "passed": {"type": "integer", "minimum": 0},
+        "failed": {"type": "integer", "minimum": 0},
+        "regression_green": {"type": "boolean", "description": "True iff every test that passed before this task still passes (no regression)."},
+        "failed_tests": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": {"type": "string"},
+              "error": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "description": "Scores per rubrics/quality-rubric.md (each 0-5) plus the objective tools/quality_check.py result.",
+      "required": ["simplicity", "readability", "comment_hygiene", "organization", "style_match"],
+      "additionalProperties": false,
+      "properties": {
+        "simplicity": {"type": "integer", "minimum": 0, "maximum": 5, "description": "Is this the simplest change that works? (5 = minimal, no incidental complexity)."},
+        "readability": {"type": "integer", "minimum": 0, "maximum": 5, "description": "Clear names, obvious control flow, easy to follow."},
+        "comment_hygiene": {"type": "integer", "minimum": 0, "maximum": 5, "description": "Comments earn their place; no long redundant blocks (backed by quality_check max_comment_block / long_comment_lines)."},
+        "organization": {"type": "integer", "minimum": 0, "maximum": 5, "description": "Files and functions land in the right place; repo stays well organised."},
+        "style_match": {"type": "integer", "minimum": 0, "maximum": 5, "description": "Matches the surrounding code's existing conventions, layout, and idiom."},
+        "objective": {"type": ["object", "null"], "description": "Raw JSON emitted by tools/quality_check.py for the changed files (ok, violations, per_file)."}
+      }
+    },
+    "quality_pass": {"type": "boolean", "description": "True iff no quality axis is below the rubric's floor AND quality_check reported no threshold violations."},
+    "gate_failures": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Hard-gate breaches forcing pass=false: a failing required test, a regression, a syntax/compile error, the Engineer editing a test file, or a quality_check threshold violation."
+    },
+    "pass": {"type": "boolean", "description": "The keep gate: failed == 0 AND regression_green AND quality_pass AND gate_failures is empty."},
+    "fixes": {
+      "type": "array",
+      "description": "Ranked, concrete actions for the Engineer's next refine round. Required whenever pass is false; each must name a fix the Engineer can apply directly.",
+      "items": {
+        "type": "object",
+        "required": ["priority", "category", "issue", "action"],
+        "additionalProperties": false,
+        "properties": {
+          "priority": {"type": "integer", "minimum": 1, "description": "1 = fix first (failing tests before quality)."},
+          "category": {"type": "string", "enum": ["test", "regression", "correctness", "simplicity", "readability", "comment_hygiene", "organization", "style_match"]},
+          "issue": {"type": "string", "description": "What is wrong or missing."},
+          "action": {"type": "string", "description": "The concrete change to make."}
+        }
+      }
+    },
+    "summary": {"type": "string", "description": "One or two sentences: the verdict and the single most important thing to fix next."}
+  }
+}
