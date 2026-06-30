@@ -194,6 +194,7 @@ plausible-but-wrong claim once it spotted a mobile confound. → [`showcase/data
 | [`optimize-loop`](loops/optimize-loop) | Evaluator-optimizer with a pluggable correctness gate + minimized metric — refactor code (tests green + complexity↓) or speed up SQL (identical results + latency↓). |
 | [`prompt-optimize`](loops/prompt-optimize) | Evolves a prompt against a user-supplied scoring command (a black-box oracle). |
 | [`plan-loop`](loops/plan-loop) † | Refines a prompt into an executable plan — first-principles decomposition → PR-sized tasks (deps, tests, subtasks) → a principal-engineer critique loop; emits `plan.md` + a validated `tasks.json`. |
+| [`swe-loop`](loops/swe-loop) † | Executes plan-loop's `tasks.json` task-by-task — an Engineer subagent writes the code (source only), a QA subagent authors the tests + grades a strict simplicity/readability rubric (tests only); they loop until the task's tests pass, regression stays green, and quality holds, then commit. |
 
 **Security** — authorized testing only
 
