@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "swe-loop/change.schema.json",
+  "title": "Engineer code change for one task iteration",
+  "description": "What the Engineer subagent returns after implementing (or refining) the current task. It applies the change to <repo> directly; this object is the record QA and the orchestrator read. The Engineer edits only source files — never test files — so the producer cannot move the gate it is graded against.",
+  "type": "object",
+  "required": ["task_id", "iteration", "summary", "files_changed", "grounded_in"],
+  "additionalProperties": false,
+  "properties": {
+    "task_id": {"type": "string", "description": "The tasks.json task id this change implements, e.g. T3."},
+    "iteration": {"type": "integer", "minimum": 1, "description": "Inner-loop iteration for this task (1 = first attempt)."},
+    "summary": {"type": "string", "description": "One paragraph: what was implemented/changed and how it advances the task's acceptance criteria."},
+    "files_changed": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Source files touched. Must be a subset of the task's `files` (source only); editing a test file is a hard gate failure.",
+      "items": {
+        "type": "object",
+        "required": ["path", "action"],
+        "additionalProperties": false,
+        "properties": {
+          "path": {"type": "string"},
+          "action": {"type": "string", "enum": ["create", "modify", "delete"]},
+          "what": {"type": "string", "description": "What changed in this file."}
+        }
+      }
+    },
+    "grounded_in": {"type": "string", "description": "What this change addresses: a specific failing test name, a QA fix id, or an acceptance_criterion from the task. On iteration 1 this is the task's objective."},
+    "new_feature": {"type": "boolean", "description": "True if this change adds behaviour beyond the task's existing tests (signals QA to author new tests rather than only grade quality)."},
+    "refine_action": {
+      "type": ["string", "null"],
+      "enum": ["refine", "pivot", "double_down", null],
+      "description": "Set on refine rounds (iteration > 1). refine = accept QA's fixes and improve; pivot = current approach is a dead end, try a different one; double_down = QA is wrong, defend with justification in `note`."
+    },
+    "note": {"type": ["string", "null"], "description": "Refinement reasoning, or a justification when refine_action is double_down."}
+  }
+}
