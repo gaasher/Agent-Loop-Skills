@@ -1,0 +1,43 @@
+# Example config for the swe-loop.
+# Copy/fill this in as loop.run.yaml in your working directory (see SKILL.md "Setup").
+
+# The coding task to build — a path to a file, or inline text.
+prompt: ./prompt.md
+
+# The project to build in. The Engineer edits it; QA edits its tests.
+repo: .
+
+# The plan-loop output the loop executes. Produced in Phase 0 if absent (plan-loop runs internally).
+tasks_file: ./sandbox/tasks.json
+
+# How the project's tests run (defaults to tasks.json.environment.test_command if set there).
+test_command: "python -m pytest -q"
+
+# Where plan, iteration artifacts, and the ledger live.
+sandbox_root: ./sandbox
+
+# branches = one git commit per kept task (needs a clean repo); snapshots = folder copies.
+iter_strategy: branches
+
+# How kept tasks become PRs (see SKILL.md "Pull requests"):
+#   stacked = one PR per task, each stacked on the prior (default); single = one PR for the whole run;
+#   none = local commits only, no PR. Needs `gh` authed + a remote (except none).
+pr_mode: stacked
+base_branch: main     # the branch PRs ultimately target (the repo's default branch)
+
+# Inner Engineer<->QA loop limits per task.
+task_budget: 6        # max rounds before a task is declared blocked
+patience: 2           # stop a task after N rounds with no improvement
+
+# Objective quality thresholds, passed to tools/quality_check.py. Tighten/loosen to the repo's norms.
+quality_thresholds:
+  max_comment_block: 8       # longest run of consecutive comment-only lines
+  max_comment_line_len: 100  # a comment line longer than this counts as a violation
+  max_func_loc: 60           # longest function body in lines
+  max_nesting: 4             # deepest nesting of compound statements
+  max_file_loc: 400          # non-blank lines per file
+
+# <skill_dir> = where this skill is installed, e.g. ~/.claude/skills/swe-loop. The objective gate is:
+#   python3 <skill_dir>/tools/quality_check.py <changed_files> \
+#     --max-comment-block 8 --max-comment-line-len 100 --max-func-loc 60 --max-nesting 4 --max-file-loc 400
+# The qualitative gate is QA's score against rubrics/quality-rubric.md (schemas/verdict.schema.json).
